@@ -1204,7 +1204,10 @@ class CV_EXPORTS_W TrackerKCF : public Tracker
     -   "GRAY" -- Use grayscale values as the feature
     -   "CN" -- Color-names feature
    */
-  enum MODE {GRAY, CN, CN2};
+  enum MODE {
+    GRAY = (1u << 0),
+    CN = (1u << 1)
+  };
 
   struct CV_EXPORTS Params
   {
