@@ -1237,7 +1237,8 @@ class CV_EXPORTS_W TrackerKCF : public Tracker
     bool compress_feature;        //!<  activate the pca method to compress the features
     int max_patch_size;           //!<  threshold for the ROI size
     int compressed_size;          //!<  feature size after compression
-    MODE descriptor;              //!<  descriptor type
+    unsigned int desc_pca;        //!<  compressed descriptors of TrackerKCF::MODE
+    unsigned int desc_npca;       //!<  non-compressed descriptors of TrackerKCF::MODE
   };
 
   /** @brief Constructor
