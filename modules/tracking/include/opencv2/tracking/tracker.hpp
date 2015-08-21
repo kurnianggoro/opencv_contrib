@@ -1250,8 +1250,6 @@ class CV_EXPORTS_W TrackerKCF : public Tracker
   BOILERPLATE_CODE("KCF",TrackerKCF);
 };
 
-//! @}
-
 /************************************ MultiTracker Class ************************************/
 /** @brief This class is used to track multiple objects using the specified tracker algorithm.
  * The MultiTracker is naive implementation of multiple object tracking.
@@ -1365,5 +1363,7 @@ Rect2d CV_EXPORTS_W selectROI(const std::string& windowName, Mat img, bool showC
 void CV_EXPORTS_W selectROI(const std::string& windowName, Mat img, std::vector<Rect2d> & boundingBox, bool fromCenter = true);
 
 } /* namespace cv */
+
+//! @}
 
 #endif
