@@ -14,11 +14,8 @@
         return classname::create();\
 }
 
-namespace cv
-{
-    //namespace face {
-    Facemark::~Facemark(){
-    }
+namespace cv {
+namespace face {
 
     void Facemark::training(String imageList, String groundTruth){
         trainingImpl(imageList, groundTruth);
@@ -88,7 +85,7 @@ namespace cv
         }
 
         faces.clear();
-        
+
         faceDetector(image, faces);
 
         return true;
@@ -233,5 +230,5 @@ namespace cv
         }
     } //drawPoints
 
-//  } /* namespace face */
+} /* namespace face */
 } /* namespace cv */
