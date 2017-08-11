@@ -2,9 +2,8 @@
 #include "opencv2/imgcodecs.hpp"
 #include "precomp.hpp"
 
-namespace cv
-{
-    //namespace face {
+namespace cv {
+namespace face {
 
     /*
     * Parameters
@@ -1086,6 +1085,6 @@ namespace cv
         Wy_dp = dW_dxdy* Mat(dx_dp,Range(npts,2*npts));
 
     } //createWarpJacobian
-
-//  } /* namespace face */
+    
+} /* namespace face */
 } /* namespace cv */

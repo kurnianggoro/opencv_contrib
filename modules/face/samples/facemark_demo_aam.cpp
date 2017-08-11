@@ -39,6 +39,7 @@
 
 using namespace std;
 using namespace cv;
+using namespace cv::face;
 
 Mat loadCSV(std::string filename);
 

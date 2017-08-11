@@ -18,10 +18,16 @@
 
 using namespace std;
 using namespace cv;
+using namespace cv::face;
 
 bool myDetector( const Mat image, std::vector<Rect> & faces );
 
 int main(int argc, char** argv ){
+    if(argc <2){
+        printf("video file is not provided\n" );
+        return 0;
+    }
+
     FacemarkLBF::Params params;
     params.saved_file_name = LBF_MODEL;
     params.cascade_face = DETECTOR_MODEL;
@@ -34,8 +40,10 @@ int main(int argc, char** argv ){
     VideoCapture capture(filename);
     Mat frame;
 
-    if( !capture.isOpened() )
-        throw "Error when reading video";
+    if( !capture.isOpened() ){
+        printf("Error when reading vide\n");
+        return 0;
+    }
 
     Mat img;
     String text;
@@ -60,7 +68,7 @@ int main(int argc, char** argv ){
         facemark->getFaces(img, rects);
         rects_scaled.clear();
 
-        for(int j=0;j<rects.size();j++){
+        for(int j=0;j<(int)rects.size();j++){
             rects_scaled.push_back(Rect(rects[j].x/scale,rects[j].y/scale,rects[j].width/scale,rects[j].height/scale));
         }
         rects = rects_scaled;
@@ -73,7 +81,7 @@ int main(int argc, char** argv ){
 
 
             fittime = ((getTickCount() - newtime)/getTickFrequency());
-            for(int j=0;j<rects.size();j++){
+            for(int j=0;j<(int)rects.size();j++){
                 landmarks[j] = Mat(Mat(landmarks[j]));
                 facemark->drawPoints(frame, landmarks[j], Scalar(0,0,255));
             }

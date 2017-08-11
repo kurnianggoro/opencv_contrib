@@ -9,8 +9,9 @@
 #include <cassert>
 #include <cstdarg>
 
-namespace cv
-{
+namespace cv {
+namespace face {
+
     #define TIMER_BEGIN { double __time__ = getTickCount();
     #define TIMER_NOW   ((getTickCount() - __time__) / getTickFrequency())
     #define TIMER_END   }
@@ -1192,11 +1193,11 @@ namespace cv
                 stat = fread(ptr, sizeof(double), gl_regression_weights[k].cols, fd);
             }
         }
-
     }
 
     #undef TIMER_BEGIN
     #undef TIMER_NOW
     #undef TIMER_END
     #undef SIMILARITY_TRANSFORM
+} /* namespace face */
 } /* namespace cv */
