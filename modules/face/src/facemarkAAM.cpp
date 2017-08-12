@@ -90,10 +90,6 @@ namespace face {
         return Ptr<FacemarkAAMImpl>(new FacemarkAAMImpl(parameters));
     }
 
-    Ptr<FacemarkAAM> FacemarkAAM::create(){
-        return Ptr<FacemarkAAMImpl>(new FacemarkAAMImpl());
-    }
-
     FacemarkAAMImpl::FacemarkAAMImpl( const FacemarkAAM::Params &parameters ) :
         params( parameters )
     {

@@ -199,10 +199,6 @@ namespace face {
         return Ptr<FacemarkLBFImpl>(new FacemarkLBFImpl(parameters));
     }
 
-    Ptr<FacemarkLBF> FacemarkLBF::create(){
-        return Ptr<FacemarkLBFImpl>(new FacemarkLBFImpl());
-    }
-
     FacemarkLBFImpl::FacemarkLBFImpl( const FacemarkLBF::Params &parameters )
     {
         isSetDetector =false;
