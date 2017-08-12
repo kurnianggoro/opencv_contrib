@@ -52,8 +52,7 @@ namespace face {
             Mat S,Q;
         };
 
-        static Ptr<FacemarkAAM> create(const FacemarkAAM::Params &parameters);
-        CV_WRAP static Ptr<FacemarkAAM> create();
+        static Ptr<FacemarkAAM> create(const FacemarkAAM::Params &parameters = FacemarkAAM::Params() );
         virtual ~FacemarkAAM() {}
 
     }; /* AAM */

@@ -56,8 +56,7 @@ namespace face {
             double width, height;
         };
 
-        static Ptr<FacemarkLBF> create(const FacemarkLBF::Params &parameters);
-        CV_WRAP static Ptr<FacemarkLBF> create();
+        static Ptr<FacemarkLBF> create(const FacemarkLBF::Params &parameters = FacemarkLBF::Params() );
         virtual ~FacemarkLBF(){};
     }; /* LBF */
 } /* namespace face */
