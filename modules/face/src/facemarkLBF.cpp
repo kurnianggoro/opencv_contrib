@@ -78,12 +78,19 @@ namespace face {
         void saveModel(String fs);
         void loadModel(String fs);
 
+        bool setFaceDetector(bool(*f)(const Mat , std::vector<Rect> & ));
+        bool getFaces( const Mat image , std::vector<Rect> & faces);
+
     protected:
 
-        bool fitImpl( const Mat, std::vector<Point2f> & landmarks );
-        bool fitImpl( const Mat, std::vector<Point2f>& , Mat R, Point2f T, float scale );
-        void trainingImpl(String imageList, String groundTruth, const FacemarkLBF::Params &parameters);
-        void trainingImpl(String imageList, String groundTruth);
+        bool fit( const Mat image, std::vector<Point2f> & landmarks );//!< from a face
+        bool fit( const Mat image, Rect face, std::vector<Point2f> & landmarks ){return 0;};//!< from an ROI
+        bool fit( const Mat image, std::vector<Rect> faces, std::vector<std::vector<Point2f> >& landmarks );//!< from many ROIs
+        bool fit( const Mat image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale );
+
+
+        // void trainingImpl(String imageList, String groundTruth, const FacemarkLBF::Params &parameters);
+        void training(String imageList, String groundTruth);
 
         Rect getBBox(Mat &img, const Mat_<double> shape);
         void prepareTrainingData(std::vector<String> images, std::vector<std::vector<Point2f> > & facePoints, std::vector<Mat> & cropped, std::vector<Mat> & shapes, std::vector<BBox> &boxes);
@@ -94,6 +101,9 @@ namespace face {
         bool defaultFaceDetector(const Mat image, std::vector<Rect> & faces);
 
         CascadeClassifier face_cascade;
+        bool(*faceDetector)(const Mat , std::vector<Rect> &  ) ;
+        bool isSetDetector;
+
     private:
         bool isModelTrained;
 
@@ -198,6 +208,27 @@ namespace face {
         params = parameters;
     }
 
+    bool FacemarkLBFImpl::setFaceDetector(bool(*f)(const Mat , std::vector<Rect> & )){
+        faceDetector = f;
+        isSetDetector = true;
+        printf("face detector is configured\n");
+        return true;
+    }
+
+
+    bool FacemarkLBFImpl::getFaces( const Mat  image , std::vector<Rect> & faces){
+
+        if(!isSetDetector){
+            return false;
+        }
+
+        faces.clear();
+
+        faceDetector(image, faces);
+
+        return true;
+    }
+
     bool FacemarkLBFImpl::configFaceDetector(){
         if(!isSetDetector){
             /*check the cascade classifier file*/
@@ -232,7 +263,7 @@ namespace face {
         return true;
     }
 
-    void FacemarkLBFImpl::trainingImpl(String imageList, String groundTruth){
+    void FacemarkLBFImpl::training(String imageList, String groundTruth){
         configFaceDetector();
 
         std::vector<String> images;
@@ -293,26 +324,26 @@ namespace face {
         isModelTrained = true;
     }
 
-    bool FacemarkLBF::fit( const Mat image, std::vector<Rect> faces, std::vector<std::vector<Point2f> > & landmarks ){
+    bool FacemarkLBFImpl::fit( const Mat image, std::vector<Rect> faces, std::vector<std::vector<Point2f> > & landmarks ){
         landmarks.resize(faces.size());
 
         for(unsigned i=0; i<faces.size();i++){
             params.detectROI = faces[i];
-            fitImpl(image, landmarks[i]);
+            fit(image, landmarks[i]);
         }
 
         return true;
     }
 
-    bool FacemarkLBFImpl::fitImpl( const Mat image, std::vector<Point2f>& landmarks){
+    bool FacemarkLBFImpl::fit( const Mat image, std::vector<Point2f>& landmarks){
         Mat R =  Mat::eye(2, 2, CV_32F);
         Point2f t = Point2f(0,0);
         float scale = 1.0;
 
-        return fitImpl(image, landmarks, R, t, scale);
+        return fit(image, landmarks, R, t, scale);
     }
 
-    bool FacemarkLBFImpl::fitImpl( const Mat image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale ){
+    bool FacemarkLBFImpl::fit( const Mat image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale ){
         if (landmarks.size()>0)
             landmarks.clear();
 

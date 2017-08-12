@@ -83,7 +83,7 @@ int main(int argc, char** argv ){
             fittime = ((getTickCount() - newtime)/getTickFrequency());
             for(int j=0;j<(int)rects.size();j++){
                 landmarks[j] = Mat(Mat(landmarks[j]));
-                facemark->drawPoints(frame, landmarks[j], Scalar(0,0,255));
+                drawFacemarks(frame, landmarks[j], Scalar(0,0,255));
             }
         }
 

@@ -50,16 +50,16 @@ using namespace cv::face;
      String testPts = "../data/points_test.txt";
      std::vector<String> images;
      std::vector<std::vector<Point2f> > facePoints;
-     facemark->loadTrainingData(testFiles, testPts, images, facePoints, 0.0);
+     loadTrainingData(testFiles, testPts, images, facePoints, 0.0);
 
      std::vector<Rect> rects;
      CascadeClassifier cc(params.cascade_face.c_str());
-     for(int i=0;i<images.size();i++){
+     for(int i=0;i<(int)images.size();i++){
          Mat img = imread(images[i]);
 
          std::vector<Point2f> landmarks;
          facemark->fit(img, landmarks);
-         facemark->drawPoints(img, landmarks, Scalar(0,0,255));
+         drawFacemarks(img, landmarks, Scalar(0,0,255));
          imshow("result", img);
          waitKey(0);
      }

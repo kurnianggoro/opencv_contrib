@@ -17,47 +17,7 @@
 namespace cv {
 namespace face {
 
-    void Facemark::training(String imageList, String groundTruth){
-        trainingImpl(imageList, groundTruth);
-    }
-
-
-    bool Facemark::fit( const Mat image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale ){
-        if( image.empty() )
-        return false;
-
-        return fitImpl( image, landmarks, R, T, scale );
-    }
-
-    bool Facemark::fit( const Mat image, std::vector<Point2f> & landmarks ){
-        if( image.empty() )
-        return false;
-
-        return fitImpl( image, landmarks );
-    }
-
-    bool Facemark::fit( const Mat image, Rect face, std::vector<Point2f> & landmarks ){
-        return fit(image(face), landmarks);
-    }
-
-    bool Facemark::fit( const Mat image, std::vector<Rect> faces, std::vector<std::vector<Point2f> > & landmarks ){
-        landmarks.resize(faces.size());
-
-        for(unsigned i=0; i<faces.size();i++){
-            fit(image(faces[i]), landmarks[i]);
-        }
-
-        return true;
-    }
-
-    Ptr<Facemark> Facemark::create( const String& facemarkType ){
-        BOILERPLATE_CODE("AAM",FacemarkAAM);
-        BOILERPLATE_CODE("LBF",FacemarkLBF);
-        return Ptr<Facemark>();
-    }
-
-
-    bool Facemark::getFacesHaar( const Mat image, std::vector<Rect> & faces, String face_cascade_name ){
+    bool getFacesHaar( const Mat image, std::vector<Rect> & faces, String face_cascade_name ){
         Mat gray;
 
         CascadeClassifier face_cascade;
@@ -70,48 +30,7 @@ namespace face {
         return true;
     }
 
-    bool Facemark::setFaceDetector(bool(*f)(const Mat , std::vector<Rect> & )){
-        faceDetector = f;
-        isSetDetector = true;
-        printf("face detector is configured\n");
-        return true;
-    }
-
-
-    bool Facemark::getFaces( const Mat  image , std::vector<Rect> & faces){
-
-        if(!isSetDetector){
-            return false;
-        }
-
-        faces.clear();
-
-        faceDetector(image, faces);
-
-        return true;
-    }
-
-    bool Facemark::process(const Mat image,std::vector<Rect> & faces, std::vector<std::vector<Point2f> >& landmarks ){
-        if(!isSetDetector){
-            return false;
-        }
-
-        faceDetector(image, faces);
-        printf("process::face detected %i\n",(int)faces.size());
-        fit(image, faces, landmarks);
-        return true;
-    }
-
-    bool Facemark::process(const Mat image,std::vector<Rect> & faces, std::vector<std::vector<Point2f> >& landmarks, String haarModel ){
-
-        getFacesHaar(image, faces, haarModel);
-        printf("process::face detected %i\n",(int)faces.size());
-        fit(image, faces, landmarks);
-
-        return true;
-    }
-
-    bool Facemark::loadTrainingData(String filename, std::vector<String> & images, std::vector<std::vector<Point2f> > & facePoints, char delim, float offset){
+    bool loadTrainingData(String filename, std::vector<String> & images, std::vector<std::vector<Point2f> > & facePoints, char delim, float offset){
         std::string line;
         std::string item;
         std::vector<Point2f> pts;
@@ -153,7 +72,7 @@ namespace face {
         return true;
     }
 
-    bool Facemark::loadTrainingData(String imageList, String groundTruth, std::vector<String> & images, std::vector<std::vector<Point2f> > & facePoints, float offset){
+    bool loadTrainingData(String imageList, String groundTruth, std::vector<String> & images, std::vector<std::vector<Point2f> > & facePoints, float offset){
         std::string line;
         std::vector<Point2f> facePts;
 
@@ -184,7 +103,7 @@ namespace face {
         return true;
     }
 
-    bool Facemark::loadFacePoints(String filename, std::vector<Point2f> & pts, float offset){
+    bool loadFacePoints(String filename, std::vector<Point2f> & pts, float offset){
         std::string line, item;
 
         std::ifstream infile(filename.c_str());
@@ -224,7 +143,7 @@ namespace face {
         return true;
     }
 
-    void Facemark::drawPoints(Mat & image, std::vector<Point2f> pts, Scalar color){
+    void drawFacemarks(Mat & image, std::vector<Point2f> pts, Scalar color){
         for(size_t i=0;i<pts.size();i++){
             circle(image, pts[i],3, color,-1);
         }
