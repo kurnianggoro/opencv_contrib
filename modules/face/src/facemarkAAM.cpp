@@ -38,12 +38,18 @@ namespace face {
         void saveModel(String fs);
         void loadModel(String fs);
 
+        bool setFaceDetector(bool(*f)(const Mat , std::vector<Rect> & ));
+        bool getFaces( const Mat image , std::vector<Rect> & faces);
+
     protected:
 
-        bool fitImpl( const Mat, std::vector<Point2f> & landmarks );
-        bool fitImpl( const Mat, std::vector<Point2f>& , Mat R, Point2f T, float scale );
-        void trainingImpl(String imageList, String groundTruth, const FacemarkAAM::Params &parameters);
-        void trainingImpl(String imageList, String groundTruth);
+        bool fit( const Mat image, std::vector<Point2f> & landmarks );//!< from a face
+        bool fit( const Mat image, Rect face, std::vector<Point2f> & landmarks ){return 0;};//!< from an ROI
+        bool fit( const Mat image, std::vector<Rect> faces, std::vector<std::vector<Point2f> >& landmarks ){return 0;};//!< from many ROIs
+        bool fit( const Mat image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale );
+
+        // void trainingImpl(String imageList, String groundTruth, const FacemarkAAM::Params &parameters);
+        void training(String imageList, String groundTruth);
 
         Mat procrustes(std::vector<Point2f> , std::vector<Point2f> , Mat & , Scalar & , float & );
         void calcMeanShape(std::vector<std::vector<Point2f> > ,std::vector<Point2f> & );
@@ -70,6 +76,8 @@ namespace face {
 
         FacemarkAAM::Params params;
         FacemarkAAM::Model AAM;
+        bool(*faceDetector)(const Mat , std::vector<Rect> &  ) ;
+        bool isSetDetector;
 
     private:
         bool isModelTrained;
@@ -101,6 +109,27 @@ namespace face {
         params.write( fs );
     }
 
+    bool FacemarkAAMImpl::setFaceDetector(bool(*f)(const Mat , std::vector<Rect> & )){
+        faceDetector = f;
+        isSetDetector = true;
+        printf("face detector is configured\n");
+        return true;
+    }
+
+
+    bool FacemarkAAMImpl::getFaces( const Mat  image , std::vector<Rect> & faces){
+
+        if(!isSetDetector){
+            return false;
+        }
+
+        faces.clear();
+
+        faceDetector(image, faces);
+
+        return true;
+    }
+
 
     // void FacemarkAAM::training(String imageList, String groundTruth, const FacemarkAAM::Params &parameters){
     //     trainingImpl(imageList, groundTruth, parameters);
@@ -111,7 +140,7 @@ namespace face {
     //     trainingImpl(imageList, groundTruth);
     // }
 
-    void FacemarkAAMImpl::trainingImpl(String imageList, String groundTruth){
+    void FacemarkAAMImpl::training(String imageList, String groundTruth){
 
         std::vector<String> images;
         std::vector<std::vector<Point2f> > facePoints, normalized;
@@ -216,16 +245,16 @@ namespace face {
         printf("training is finished\n");
     }
 
-    bool FacemarkAAMImpl::fitImpl( const Mat image, std::vector<Point2f>& landmarks){
+    bool FacemarkAAMImpl::fit( const Mat image, std::vector<Point2f>& landmarks){
         /*temporary values...will be updated*/
         Mat R =  Mat::eye(2, 2, CV_32F);
         Point2f t = Point2f(0,0);
         float scale = 1.0;
 
-        return fitImpl(image, landmarks, R, t, scale);
+        return fit(image, landmarks, R, t, scale);
     }
 
-    bool FacemarkAAMImpl::fitImpl( const Mat image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale ){
+    bool FacemarkAAMImpl::fit( const Mat image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale ){
         if (landmarks.size()>0)
             landmarks.clear();
 
@@ -1085,6 +1114,6 @@ namespace face {
         Wy_dp = dW_dxdy* Mat(dx_dp,Range(npts,2*npts));
 
     } //createWarpJacobian
-    
+
 } /* namespace face */
 } /* namespace cv */
