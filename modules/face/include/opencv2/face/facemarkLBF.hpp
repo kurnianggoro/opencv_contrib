@@ -56,9 +56,6 @@ namespace face {
             double width, height;
         };
 
-        Params params;
-        // bool fit( const Mat image, std::vector<Rect> faces, std::vector<std::vector<Point2f> >& landmarks );//!< from many ROIs
-
         static Ptr<FacemarkLBF> create(const FacemarkLBF::Params &parameters);
         CV_WRAP static Ptr<FacemarkLBF> create();
         virtual ~FacemarkLBF(){};

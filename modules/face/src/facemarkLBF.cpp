@@ -81,6 +81,8 @@ namespace face {
         bool setFaceDetector(bool(*f)(const Mat , std::vector<Rect> & ));
         bool getFaces( const Mat image , std::vector<Rect> & faces);
 
+        Params params;
+
     protected:
 
         bool fit( const Mat image, std::vector<Point2f> & landmarks );//!< from a face
