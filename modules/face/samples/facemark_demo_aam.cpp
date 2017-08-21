@@ -45,7 +45,7 @@ Mat loadCSV(std::string filename);
 
 int main(int argc, char** argv )
 {
-    Ptr<Facemark> facemark = FacemarkAAM::create();
+    Ptr<FacemarkAAM> facemark = FacemarkAAM::create();
 
     /*--------------- TRAINING -----------------*/
     String imageFiles = "../data/images_train.txt";

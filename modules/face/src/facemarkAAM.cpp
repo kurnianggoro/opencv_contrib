@@ -43,10 +43,9 @@ namespace face {
 
     protected:
 
-        bool fit( const Mat image, std::vector<Point2f> & landmarks );//!< from a face
-        bool fit( const Mat image, Rect face, std::vector<Point2f> & landmarks ){return 0;};//!< from an ROI
-        bool fit( const Mat image, std::vector<Rect> faces, std::vector<std::vector<Point2f> >& landmarks ){return 0;};//!< from many ROIs
-        bool fit( const Mat image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale );
+        bool fit( InputArray image, std::vector<Rect> faces, std::vector<std::vector<Point2f> > & landmarks );//!< from many ROIs
+        bool fit( InputArray image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale );
+        bool fitImpl( const Mat image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale );
 
         // void trainingImpl(String imageList, String groundTruth, const FacemarkAAM::Params &parameters);
         void training(String imageList, String groundTruth);
@@ -241,16 +240,34 @@ namespace face {
         printf("training is finished\n");
     }
 
-    bool FacemarkAAMImpl::fit( const Mat image, std::vector<Point2f>& landmarks){
-        /*temporary values...will be updated*/
+    bool FacemarkAAMImpl::fit( InputArray image, std::vector<Rect> faces, std::vector<std::vector<Point2f> > &  landmarks )
+    {
+        landmarks.resize(faces.size());
+
         Mat R =  Mat::eye(2, 2, CV_32F);
         Point2f t = Point2f(0,0);
         float scale = 1.0;
+        for(unsigned i=0; i<faces.size();i++){
+            fitImpl(image.getMat(), landmarks[i], R, t, scale);
+        }
 
-        return fit(image, landmarks, R, t, scale);
+        return true;
     }
 
-    bool FacemarkAAMImpl::fit( const Mat image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale ){
+    // bool FacemarkAAMImpl::fit( const Mat image, std::vector<Point2f>& landmarks){
+    //     /*temporary values...will be updated*/
+    //     Mat R =  Mat::eye(2, 2, CV_32F);
+    //     Point2f t = Point2f(0,0);
+    //     float scale = 1.0;
+    //
+    //     return fit(image, landmarks, R, t, scale);
+    // }
+    //
+    bool FacemarkAAMImpl::fit( InputArray image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale ){
+        return fitImpl(image.getMat(), landmarks, R, T, scale);
+    }
+
+    bool FacemarkAAMImpl::fitImpl( const Mat image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale ){
         if (landmarks.size()>0)
             landmarks.clear();
 

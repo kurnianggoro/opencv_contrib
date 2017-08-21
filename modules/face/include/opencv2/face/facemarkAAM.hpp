@@ -51,7 +51,7 @@ namespace face {
             std::vector<Point2f> s0;
             Mat S,Q;
         };
-
+        virtual bool fit( InputArray image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale )=0;
         static Ptr<FacemarkAAM> create(const FacemarkAAM::Params &parameters = FacemarkAAM::Params() );
         virtual ~FacemarkAAM() {}
 

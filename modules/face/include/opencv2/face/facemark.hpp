@@ -33,24 +33,21 @@ namespace face {
     {
     public:
 
-        virtual void read( const FileNode& fn )=0;
-        virtual void write( FileStorage& fs ) const=0;
+        // virtual void read( const FileNode& fn )=0;
+        // virtual void write( FileStorage& fs ) const=0;
 
         /**
         * \brief training the facemark model, input are the file names of image list and landmark annotation
         */
         virtual void training(String imageList, String groundTruth)=0;
-        virtual void saveModel(String fs)=0;
+        // virtual void saveModel(String fs)=0;
         virtual void loadModel(String fs)=0;
 
         /**
         * \brief extract landmark points from a face
         */
         // CV_WRAP bool detect( InputArray image, Rect2d& boundingBox );
-        virtual bool fit( const Mat image, std::vector<Point2f> & landmarks )=0;//!< from a face
-        virtual bool fit( const Mat image, Rect face, std::vector<Point2f> & landmarks )=0;//!< from an ROI
-        virtual bool fit( const Mat image, std::vector<Rect> faces, std::vector<std::vector<Point2f> >& landmarks )=0;//!< from many ROIs
-        virtual bool fit( const Mat image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale )=0;
+        virtual bool fit( InputArray image, std::vector<Rect> faces, std::vector<std::vector<Point2f> > & landmarks )=0;//!< from many ROIs
 
         //!<  set the custom face detector
         virtual bool setFaceDetector(bool(*f)(const Mat , std::vector<Rect> & ))=0;
