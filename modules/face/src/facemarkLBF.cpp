@@ -75,7 +75,7 @@ namespace face {
         void read( const FileNode& /*fn*/ );
         void write( FileStorage& /*fs*/ ) const;
 
-        void saveModel(String fs);
+        // void saveModel(String fs);
         void loadModel(String fs);
 
         bool setFaceDetector(bool(*f)(const Mat , std::vector<Rect> & ));
@@ -394,9 +394,9 @@ namespace face {
         params.write( fs );
     }
 
-    void FacemarkLBFImpl::saveModel(String s){
-
-    }
+    // void FacemarkLBFImpl::saveModel(String s){
+    //
+    // }
 
     void FacemarkLBFImpl::loadModel(String s){
         printf("loading data from : %s\n", s.c_str());
@@ -857,20 +857,21 @@ namespace face {
 
 
     void FacemarkLBFImpl::RandomTree::write(FILE *fd) {
-        int stat;
+        // int stat;
         for (int i = 1; i < nodes_n / 2; i++) {
-            stat = fwrite(feats.ptr<double>(i), sizeof(double), 4, fd);
-            stat = fwrite(&thresholds[i], sizeof(int), 1, fd);
+            fwrite(feats.ptr<double>(i), sizeof(double), 4, fd);
+            fwrite(&thresholds[i], sizeof(int), 1, fd);
         }
     }
 
     void FacemarkLBFImpl::RandomTree::read(FILE *fd) {
-        int stat;
+        size_t status;
         // initialize
         for (int i = 1; i < nodes_n / 2; i++) {
-            stat = fread(feats.ptr<double>(i), sizeof(double), 4, fd);
-            stat = fread(&thresholds[i], sizeof(int), 1, fd);
+            status = fread(feats.ptr<double>(i), sizeof(double), 4, fd);
+            status = fread(&thresholds[i], sizeof(int), 1, fd);
         }
+        status = status | status;
     }
 
     /*---------------RandomForest Implementation---------------------*/
@@ -1097,13 +1098,13 @@ namespace face {
             printf("train %2dth landmark\n", i);
             struct liblinear::problem prob_ = prob;
             prob_.y = Y[2 * i];
-            liblinear::check_parameter(&prob_, &param);
+            liblinear::check_parameter(&param);
             struct liblinear::model *model = liblinear::train(&prob_, &param);
             for (int j = 0; j < F; j++) weight(2 * i, j) = liblinear::get_decfun_coef(model, j + 1, 0);
             FREE_MODEL(model);
 
             prob_.y = Y[2 * i + 1];
-            liblinear::check_parameter(&prob_, &param);
+            liblinear::check_parameter(&param);
             model = liblinear::train(&prob_, &param);
             for (int j = 0; j < F; j++) weight(2 * i + 1, j) = liblinear::get_decfun_coef(model, j + 1, 0);
             FREE_MODEL(model);
@@ -1159,17 +1160,17 @@ namespace face {
     } // Regressor::predict
 
     void FacemarkLBFImpl::Regressor::write(FILE *fd, Params params) {
-        int stat;
+
         // global parameters
-        stat = fwrite(&params.stages_n, sizeof(int), 1, fd);
-        stat = fwrite(&params.tree_n, sizeof(int), 1, fd);
-        stat = fwrite(&params.tree_depth, sizeof(int), 1, fd);
-        stat = fwrite(&params.n_landmarks, sizeof(int), 1, fd);
+        fwrite(&params.stages_n, sizeof(int), 1, fd);
+        fwrite(&params.tree_n, sizeof(int), 1, fd);
+        fwrite(&params.tree_depth, sizeof(int), 1, fd);
+        fwrite(&params.n_landmarks, sizeof(int), 1, fd);
         // mean_shape
         double *ptr = NULL;
         for (int i = 0; i < mean_shape.rows; i++) {
             ptr = mean_shape.ptr<double>(i);
-            stat = fwrite(ptr, sizeof(double), mean_shape.cols, fd);
+            fwrite(ptr, sizeof(double), mean_shape.cols, fd);
         }
         // every stages
         for (int k = 0; k < params.stages_n; k++) {
@@ -1177,18 +1178,17 @@ namespace face {
             random_forests[k].write(fd);
             for (int i = 0; i < 2 * params.n_landmarks; i++) {
                 ptr = gl_regression_weights[k].ptr<double>(i);
-                stat = fwrite(ptr, sizeof(double), gl_regression_weights[k].cols, fd);
+                fwrite(ptr, sizeof(double), gl_regression_weights[k].cols, fd);
             }
         }
     }
 
     void FacemarkLBFImpl::Regressor::read(FILE *fd, Params & params){
-        int stat;
-        int loader;
-        stat = fread(&params.stages_n, sizeof(int), 1, fd);
-        stat = fread(&params.tree_n, sizeof(int), 1, fd);
-        stat = fread(&params.tree_depth, sizeof(int), 1, fd);
-        stat = fread(&params.n_landmarks, sizeof(int), 1, fd);
+
+        size_t status = fread(&params.stages_n, sizeof(int), 1, fd);
+        status = fread(&params.tree_n, sizeof(int), 1, fd);
+        status = fread(&params.tree_depth, sizeof(int), 1, fd);
+        status = fread(&params.n_landmarks, sizeof(int), 1, fd);
         stages_n = params.stages_n;
         landmark_n = params.n_landmarks;
 
@@ -1199,8 +1199,7 @@ namespace face {
 
         for (int i = 0; i < mean_shape.rows; i++) {
             ptr = mean_shape.ptr<double>(i);
-            stat = fread(ptr, sizeof(double), mean_shape.cols, fd);
-
+            status = fread(ptr, sizeof(double), mean_shape.cols, fd);
         }
 
         // every stages
@@ -1209,9 +1208,10 @@ namespace face {
             random_forests[k].read(fd);
             for (int i = 0; i < 2 * params.n_landmarks; i++) {
                 ptr = gl_regression_weights[k].ptr<double>(i);
-                stat = fread(ptr, sizeof(double), gl_regression_weights[k].cols, fd);
+                status = fread(ptr, sizeof(double), gl_regression_weights[k].cols, fd);
             }
         }
+        status = status | status;
     }
 
     #undef TIMER_BEGIN

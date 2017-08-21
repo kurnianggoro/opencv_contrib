@@ -554,6 +554,7 @@ int daxpy_(int *n, double *sa, double *sx, int *incx, double *sy,
 // extern "C" {
 // #endif
 
+double ddot_(int *n, double *sx, int *incx, double *sy, int *incy);
 double ddot_(int *n, double *sx, int *incx, double *sy, int *incy)
 {
   long int i, m, nn, iincx, iincy;
@@ -611,6 +612,7 @@ double ddot_(int *n, double *sx, int *incx, double *sy, int *incy)
 extern "C" {
 #endif
 
+double dnrm2_(int *n, double *x, int *incx);
 double dnrm2_(int *n, double *x, int *incx)
 {
   long int ix, nn, iincx;
@@ -1071,7 +1073,7 @@ void free_model_content(struct model *model_ptr);
 void free_and_destroy_model(struct model **model_ptr_ptr);
 void destroy_param(struct parameter *param);
 
-const char *check_parameter(const struct problem *prob, const struct parameter *param);
+const char *check_parameter(const struct parameter *param);
 int check_probability_model(const struct model *model);
 int check_regression_model(const struct model *model);
 void set_print_string_function(void (*print_func) (const char*));
@@ -1563,6 +1565,7 @@ Solver_MCSVM_CS::~Solver_MCSVM_CS()
 	delete[] G;
 }
 
+int compare_double(const void *a, const void *b);
 int compare_double(const void *a, const void *b)
 {
 	if(*(double *)a > *(double *)b)
@@ -2293,7 +2296,7 @@ static void solve_l2r_l1l2_svr(
 #undef GETI
 #define GETI(i) (y[i]+1)
 // To support weights for instances, use GETI(i) (i)
-
+void solve_l2r_lr_dual(const problem *prob, double *w, double eps, double Cp, double Cn);
 void solve_l2r_lr_dual(const problem *prob, double *w, double eps, double Cp, double Cn)
 {
 	int l = prob->l;
@@ -3708,6 +3711,7 @@ int save_model(const char *model_file_name, const struct model *model_)
 
 struct model *load_model(const char *model_file_name)
 {
+    int status;
 	FILE *fp = fopen(model_file_name,"r");
 	if(fp==NULL) return NULL;
 
@@ -3727,10 +3731,10 @@ struct model *load_model(const char *model_file_name)
 	char cmd[81];
 	while(1)
 	{
-		fscanf(fp,"%80s",cmd);
+		status = fscanf(fp,"%80s",cmd);
 		if(strcmp(cmd,"solver_type")==0)
 		{
-			fscanf(fp,"%80s",cmd);
+			status = fscanf(fp,"%80s",cmd);
 			int i;
 			for(i=0;solver_type_table[i];i++)
 			{
@@ -3753,17 +3757,17 @@ struct model *load_model(const char *model_file_name)
 		}
 		else if(strcmp(cmd,"nr_class")==0)
 		{
-			fscanf(fp,"%d",&nr_class);
+			status = fscanf(fp,"%d",&nr_class);
 			model_->nr_class=nr_class;
 		}
 		else if(strcmp(cmd,"nr_feature")==0)
 		{
-			fscanf(fp,"%d",&nr_feature);
+			status = fscanf(fp,"%d",&nr_feature);
 			model_->nr_feature=nr_feature;
 		}
 		else if(strcmp(cmd,"bias")==0)
 		{
-			fscanf(fp,"%lf",&bias);
+			status = fscanf(fp,"%lf",&bias);
 			model_->bias=bias;
 		}
 		else if(strcmp(cmd,"w")==0)
@@ -3775,7 +3779,7 @@ struct model *load_model(const char *model_file_name)
 			int _nr_class = model_->nr_class;
 			model_->label = Malloc(int,_nr_class);
 			for(int i=0;i<_nr_class;i++)
-				fscanf(fp,"%d",&model_->label[i]);
+				status = fscanf(fp,"%d",&model_->label[i]);
 		}
 		else
 		{
@@ -3805,9 +3809,10 @@ struct model *load_model(const char *model_file_name)
 	{
 		int j;
 		for(j=0; j<nr_w; j++)
-			fscanf(fp, "%lf ", &model_->w[i*nr_w+j]);
-		fscanf(fp, "\n");
+			status = fscanf(fp, "%lf ", &model_->w[i*nr_w+j]);
+		status = fscanf(fp, "\n");
 	}
+    status = status | status;
 
 	setlocale(LC_ALL, old_locale);
 	free(old_locale);
@@ -3907,7 +3912,7 @@ void destroy_param(parameter* param)
 		free(param->weight);
 }
 
-const char *check_parameter(const problem *prob, const parameter *param)
+const char *check_parameter(const parameter *param)
 {
 	if(param->eps <= 0)
 		return "eps <= 0";

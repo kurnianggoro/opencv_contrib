@@ -33,7 +33,7 @@
  using namespace cv;
 using namespace cv::face;
 
- int main(int argc, char** argv )
+ int main()
  {
      /*create the facemark instance*/
      FacemarkLBF::Params params;
