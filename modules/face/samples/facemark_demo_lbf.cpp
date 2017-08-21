@@ -57,9 +57,10 @@ using namespace cv::face;
      for(int i=0;i<(int)images.size();i++){
          Mat img = imread(images[i]);
 
-         std::vector<Point2f> landmarks;
-         facemark->fit(img, landmarks);
-         drawFacemarks(img, landmarks, Scalar(0,0,255));
+         std::vector<std::vector<Point2f> > landmarks;
+         rects.push_back(Rect(0,0,img.cols, img.rows));
+         facemark->fit(img, rects, landmarks);
+         drawFacemarks(img, landmarks[0], Scalar(0,0,255));
          imshow("result", img);
          waitKey(0);
      }

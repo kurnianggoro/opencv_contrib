@@ -85,11 +85,8 @@ namespace face {
 
     protected:
 
-        bool fit( const Mat image, std::vector<Point2f> & landmarks );//!< from a face
-        bool fit( const Mat image, Rect face, std::vector<Point2f> & landmarks ){return 0;};//!< from an ROI
-        bool fit( const Mat image, std::vector<Rect> faces, std::vector<std::vector<Point2f> >& landmarks );//!< from many ROIs
-        bool fit( const Mat image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale );
-
+        bool fit( InputArray image, std::vector<Rect> faces, std::vector<std::vector<Point2f> > & landmarks );//!< from many ROIs
+        bool fitImpl( const Mat image, std::vector<Point2f> & landmarks );//!< from a face
 
         // void trainingImpl(String imageList, String groundTruth, const FacemarkLBF::Params &parameters);
         void training(String imageList, String groundTruth);
@@ -322,26 +319,19 @@ namespace face {
         isModelTrained = true;
     }
 
-    bool FacemarkLBFImpl::fit( const Mat image, std::vector<Rect> faces, std::vector<std::vector<Point2f> > & landmarks ){
+    bool FacemarkLBFImpl::fit( InputArray image, std::vector<Rect> faces, std::vector<std::vector<Point2f> > &  landmarks )
+    {
         landmarks.resize(faces.size());
 
         for(unsigned i=0; i<faces.size();i++){
             params.detectROI = faces[i];
-            fit(image, landmarks[i]);
+            fitImpl(image.getMat(), landmarks[i]);
         }
 
         return true;
     }
 
-    bool FacemarkLBFImpl::fit( const Mat image, std::vector<Point2f>& landmarks){
-        Mat R =  Mat::eye(2, 2, CV_32F);
-        Point2f t = Point2f(0,0);
-        float scale = 1.0;
-
-        return fit(image, landmarks, R, t, scale);
-    }
-
-    bool FacemarkLBFImpl::fit( const Mat image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale ){
+    bool FacemarkLBFImpl::fitImpl( const Mat image, std::vector<Point2f>& landmarks){
         if (landmarks.size()>0)
             landmarks.clear();
 
