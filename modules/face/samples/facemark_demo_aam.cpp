@@ -39,12 +39,13 @@
 
 using namespace std;
 using namespace cv;
+using namespace cv::face;
 
 Mat loadCSV(std::string filename);
 
 int main(int argc, char** argv )
 {
-    Ptr<Facemark> facemark = FacemarkAAM::create();
+    Ptr<FacemarkAAM> facemark = FacemarkAAM::create();
 
     /*--------------- TRAINING -----------------*/
     String imageFiles = "../data/images_train.txt";
@@ -61,7 +62,7 @@ int main(int argc, char** argv )
     /*load the list of test
     *files, offest -1.0 is used since in opencv index is started from 0
     */
-    facemark->loadTrainingData(imageFiles, ptsFiles, images, facePoints, -1.0);
+    loadTrainingData(imageFiles, ptsFiles, images, facePoints, -1.0);
 
     /*load the selected image*/
     int tId = 0;
@@ -79,7 +80,7 @@ int main(int argc, char** argv )
     /*fitting process*/
     std::vector<Point2f> landmarks;
     facemark->fit(image, landmarks, R,T, scale);
-    facemark->drawPoints(image, landmarks);
+    drawFacemarks(image, landmarks);
     imshow("fitting", image);
     waitKey(0);
 }

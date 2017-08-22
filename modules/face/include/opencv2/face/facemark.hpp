@@ -2,138 +2,107 @@
 #ifndef __OPENCV_FACELANDMARK_HPP__
 #define __OPENCV_FACELANDMARK_HPP__
 
+/**
+@defgroup facemark Face Landmark Detection
+- @ref tutorial_table_of_content_facemark
+*/
+
 #include "opencv2/face.hpp"
 #include "opencv2/objdetect.hpp"
 #include "opencv2/objdetect/objdetect_c.h"
 #include "opencv2/imgproc/types_c.h"
 
-#undef BOILERPLATE_CODE
-#define BOILERPLATE_CODE(name,classname) \
-    static Ptr<classname> create(const classname::Params &parameters); \
-    CV_WRAP static Ptr<classname> create(); \
-    virtual ~classname(){};
+namespace cv {
+namespace face {
 
-namespace cv
-{
-    //namespace face {
+//! @addtogroup facemark
+//! @{
+
+    /** @brief Abstract base class for all facemark models
+    @code
+    std::vector<cv::Rect> roi;
+    cv::face::getFacesHaar(frame, roi, "haarcascade_frontalface_alt.xml");
+    for(int j=0;j<rects.size();j++){
+        cv::rectangle(frame, rects[j], cv::Scalar(255,0,255));
+    }
+    @endcode
+    */
+    CV_EXPORTS_W bool getFacesHaar( InputArray image,
+                                    OutputArray faces,
+                                    String face_cascade_name );
+
+    CV_EXPORTS_W bool loadTrainingData( String filename , std::vector<String> & images,
+                                        OutputArray facePoints,
+                                        char delim = ' ', float offset = 0.0);
+
+    CV_EXPORTS_W bool loadTrainingData( String imageList, String groundTruth,
+                                        std::vector<String> & images,
+                                        OutputArray facePoints,
+                                        float offset = 0.0);
+
+    CV_EXPORTS_W bool loadFacePoints( String filename, OutputArray points,
+                                      float offset = 0.0);
+
+    CV_EXPORTS_W void drawFacemarks( InputOutputArray image, InputArray points,
+                                     Scalar color = Scalar(255,0,0));
+
+    /** @brief Abstract base class for all facemark models
+
+    All facemark models in OpenCV are derived from the abstract base class Facemark, which
+    provides a unified access to all facemark algorithms in OpenCV.
+
+    ### Description
+
+    Facemark is a base class which provides universal access to any specific facemark algorithm.
+    Therefore, the users should declare a desired algorithm before they can use it in their application.
+
+    Here is an example on how to declare facemark algorithm:
+    @code
+    // Using Facemark in your code:
+    Ptr<Facemark> facemark = FacemarkLBF::create();
+    @endcode
+
+    The typical pipeline for facemark detection is listed as follows:
+    - (Non-mandatory) Set a user defined face detection using Facemark::setFaceDetector.
+      The facemark algorithms are desgined to fit the facial points into a face.
+      Therefore, the face information should be provided to the facemark algorithm.
+      Some algorithms might provides a default face recognition function.
+      However, the users might prefer to use their own face detector to obtains the best possible detection result.
+    - (Non-mandatory) Training the model for a specific algorithm using Facemark::training.
+      In this case, the model should be automatically saved by the algorithm.
+      If the user already have a trained model, then this part can be omitted.
+    - Load the trained model using Facemark::loadModel.
+    - Perform the fitting via the Facemark::fit.
+    */
     class CV_EXPORTS_W Facemark : public virtual Algorithm
     {
     public:
 
-        virtual ~Facemark();
-        virtual void read( const FileNode& fn )=0;
-        virtual void write( FileStorage& fs ) const=0;
+        // virtual void read( const FileNode& fn )=0;
+        // virtual void write( FileStorage& fs ) const=0;
 
         /**
         * \brief training the facemark model, input are the file names of image list and landmark annotation
         */
-        void training(String imageList, String groundTruth);
-        virtual void saveModel(FileStorage& fs)=0;
-        virtual void loadModel(FileStorage& fs)=0;
-
-        bool loadTrainingData(String filename , std::vector<String> & images, std::vector<std::vector<Point2f> > & facePoints, char delim = ' ', float offset = 0.0);
-        bool loadTrainingData(String imageList, String groundTruth, std::vector<String> & images, std::vector<std::vector<Point2f> > & facePoints, float offset = 0.0);
-        bool loadFacePoints(String filename, std::vector<Point2f> & pts, float offset = 0.0);
-        void drawPoints(Mat & image, std::vector<Point2f> pts, Scalar color = Scalar(255,0,0));
+        virtual void training(String imageList, String groundTruth)=0;
+        virtual void loadModel(String fs)=0;
+        // virtual void saveModel(String fs)=0;
 
         /**
         * \brief extract landmark points from a face
         */
-        // CV_WRAP bool detect( InputArray image, Rect2d& boundingBox );
-        bool fit( const Mat image, std::vector<Point2f> & landmarks );//!< from a face
-        bool fit( const Mat image, Rect face, std::vector<Point2f> & landmarks );//!< from an ROI
-        bool fit( const Mat image, std::vector<Rect> faces, std::vector<std::vector<Point2f> >& landmarks );//!< from many ROIs
-        bool fit( const Mat image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale );
+        virtual bool fit( InputArray image, InputArray faces, InputOutputArray landmarks )=0;//!< from many ROIs
 
-        static Ptr<Facemark> create( const String& facemarkType );
-
-        //!<  default face detector
-        bool getFacesHaar( const Mat image , std::vector<Rect> & faces, String face_cascade_name);
-
+        virtual bool setFaceDetector(bool(*f)(InputArray , OutputArray ))=0;
         //!<  set the custom face detector
-        bool setFaceDetector(bool(*f)(const Mat , std::vector<Rect> & ));
+        virtual bool getFaces( InputArray image , OutputArray faces)=0;
         //!<  get faces using the custom detector
-        bool getFaces( const Mat image , std::vector<Rect> & faces);
-
-        //!<  get faces and then extract landmarks for each of them
-        bool process(const Mat image,std::vector<Rect> & faces, std::vector<std::vector<Point2f> >& landmarks );
-
-        //!<  using the default face detector (haarClassifier), xml of the model should be provided
-        bool process(const Mat image,std::vector<Rect> & faces, std::vector<std::vector<Point2f> >& landmarks, String haarModel );
-
-    protected:
-        virtual bool fitImpl( const Mat image, std::vector<Point2f> & landmarks )=0;
-        virtual bool fitImpl( const Mat, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale )=0; //temporary
-        virtual void trainingImpl(String imageList, String groundTruth)=0;
-
-        /*circumventable face extractor function*/
-        bool(*faceDetector)(const Mat , std::vector<Rect> &  ) ;
-        bool isSetDetector;
 
     }; /* Facemark*/
 
-    class CV_EXPORTS_W FacemarkAAM : public Facemark
-    {
-    public:
-        struct CV_EXPORTS Params
-        {
-            /**
-            * \brief Constructor
-            */
-            Params();
+//! @}
 
-            /*read only parameters - just for example*/
-            double detect_thresh;         //!<  detection confidence threshold
-            double sigma;                 //!<  another parameter
-
-            /**
-            * \brief Read parameters from file, currently unused
-            */
-            void read(const FileNode& /*fn*/);
-
-            /**
-            * \brief Read parameters from file, currently unused
-            */
-            void write(FileStorage& /*fs*/) const;
-        };
-
-        struct CV_EXPORTS Model{
-            int npts;
-            int max_n;
-            std::vector<int>scales;
-
-            /*warping*/
-            std::vector<Vec3i> triangles;
-
-            struct Texture{
-                int max_m;
-                Rect resolution;
-                Mat A0,A,AA0,AA;
-                std::vector<std::vector<Point> > textureIdx;
-                std::vector<Point2f> base_shape;
-                std::vector<int> ind1, ind2;
-            };
-            std::vector<Texture> textures;
-
-            /*shape*/
-            std::vector<Point2f> s0;
-            Mat S,Q;
-        };
-
-        //void training(String imageList, String groundTruth, const FacemarkAAM::Params &parameters);
-        //virtual void trainingImpl(String imageList, String groundTruth, const FacemarkAAM::Params &parameters)=0;
-
-        /**
-        * \brief this BOILERPLATE_CODE is equivalent to the following snippet
-        * (see the definition at the top)
-        * static Ptr<FacemarkAAM> create(const FacemarkAAM::Params &parameters);
-        * CV_WRAP static Ptr<FacemarkAAM> create();
-        * virtual ~FacemarkAAM() {}
-        */
-        BOILERPLATE_CODE("AAM",FacemarkAAM);
-    }; /* AAM */
-
-//  } /* namespace face */
+} /* namespace face */
 } /* namespace cv */
 
 
