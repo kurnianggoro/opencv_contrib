@@ -15,29 +15,36 @@ namespace face {
             */
             Params();
 
-            /*read only parameters - just for example*/
-            double detect_thresh;         //!<  detection confidence threshold
-            double sigma;                 //!<  another parameter
             double shape_offset;
+            //!<  offset for the loaded face landmark points
             String cascade_face;
+            //!<  filename of the face detector model
 
             int n_landmarks;
+            //!<  number of landmark points
             int initShape_n;
+            //!<  multiplier for augment the training data
 
             int stages_n;
+            //!<  number of refinement stages
             int tree_n;
+            //!<  number of tree in the model for each landmark point refinement
             int tree_depth;
+            //!<  the depth of decision tree, defines the size of feature
             double bagging_overlap;
+            //!<  overlap ratio for training the LBF feature
 
-            std::string saved_file_name;
+            std::string model_filename;
+            //!<  number of refinement stages
             std::vector<int> feats_m;
             std::vector<double> radius_m;
             std::vector<int> pupils[2];
+            //!<  index of facemark points on pupils of left and right eye
 
             Rect detectROI;
 
-            void read(const FileNode& /*fn*/);
-            void write(FileStorage& /*fs*/) const;
+            // void read(const FileNode& /*fn*/);
+            // void write(FileStorage& /*fs*/) const;
 
         };
 

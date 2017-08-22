@@ -29,12 +29,12 @@ int main(int argc, char** argv ){
     }
 
     FacemarkLBF::Params params;
-    params.saved_file_name = LBF_MODEL;
+    params.model_filename = LBF_MODEL;
     params.cascade_face = DETECTOR_MODEL;
 
     Ptr<Facemark> facemark = FacemarkLBF::create(params);
     facemark->setFaceDetector(myDetector);
-    facemark->loadModel(params.saved_file_name.c_str());
+    facemark->loadModel(params.model_filename.c_str());
 
     string filename = argv[1];
     VideoCapture capture(filename);

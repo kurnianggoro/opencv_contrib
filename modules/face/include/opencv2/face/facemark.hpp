@@ -2,6 +2,12 @@
 #ifndef __OPENCV_FACELANDMARK_HPP__
 #define __OPENCV_FACELANDMARK_HPP__
 
+/**
+@defgroup facemark Face Landmark Detection
+- @ref face_changelog
+- @ref tutorial_table_of_content_facemark
+*/
+
 #include "opencv2/face.hpp"
 #include "opencv2/objdetect.hpp"
 #include "opencv2/objdetect/objdetect_c.h"
@@ -9,6 +15,9 @@
 
 namespace cv {
 namespace face {
+
+//! @addtogroup facemark
+//! @{
 
     CV_EXPORTS_W bool getFacesHaar( const Mat image,
                                     std::vector<Rect> & faces,
@@ -40,21 +49,22 @@ namespace face {
         * \brief training the facemark model, input are the file names of image list and landmark annotation
         */
         virtual void training(String imageList, String groundTruth)=0;
-        // virtual void saveModel(String fs)=0;
         virtual void loadModel(String fs)=0;
+        // virtual void saveModel(String fs)=0;
 
         /**
         * \brief extract landmark points from a face
         */
-        // CV_WRAP bool detect( InputArray image, Rect2d& boundingBox );
         virtual bool fit( InputArray image, std::vector<Rect> faces, std::vector<std::vector<Point2f> > & landmarks )=0;//!< from many ROIs
 
-        //!<  set the custom face detector
         virtual bool setFaceDetector(bool(*f)(const Mat , std::vector<Rect> & ))=0;
-        //!<  get faces using the custom detector
+        //!<  set the custom face detector
         virtual bool getFaces( const Mat image , std::vector<Rect> & faces)=0;
+        //!<  get faces using the custom detector
 
     }; /* Facemark*/
+
+//! @}
 
 } /* namespace face */
 } /* namespace cv */

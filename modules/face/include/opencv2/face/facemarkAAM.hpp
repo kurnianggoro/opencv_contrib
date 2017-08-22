@@ -14,44 +14,71 @@ namespace face {
             */
             Params();
 
-            /*read only parameters - just for example*/
-            double detect_thresh;         //!<  detection confidence threshold
-            double sigma;                 //!<  another parameter
-
-            /**
-            * \brief Read parameters from file, currently unused
-            */
-            void read(const FileNode& /*fn*/);
-
-            /**
-            * \brief Read parameters from file, currently unused
-            */
-            void write(FileStorage& /*fs*/) const;
+            // /**
+            // * \brief Read parameters from file, currently unused
+            // */
+            // // void read(const FileNode& /*fn*/);
+            //
+            // /**
+            // * \brief Read parameters from file, currently unused
+            // */
+            // // void write(FileStorage& /*fs*/) const;
         };
 
+        /**
+        * \brief The model of AAM Algorithm
+        */
         struct CV_EXPORTS Model{
-            int npts;
-            int max_n;
+            int npts; //!<  unused delete
+            int max_n; //!<  unused delete
             std::vector<int>scales;
+            //!<  defines the scales considered to build the model
 
             /*warping*/
             std::vector<Vec3i> triangles;
+            //!<  each element contains 3 values, represent index of facemarks that construct one triangle (obtained using delaunay triangulation)
 
             struct Texture{
-                int max_m;
+                int max_m; //!<  unused delete
                 Rect resolution;
-                Mat A0,A,AA0,AA;
+                //!<  resolution of the current scale
+                Mat A;
+                //!<  gray values from all face region in the dataset, projected in PCA space
+                Mat A0;
+                //!<  average of gray values from all face region in the dataset
+                Mat AA;
+                //!<  gray values from all erorded face region in the dataset, projected in PCA space
+                Mat AA0;
+                //!<  average of gray values from all erorded face region in the dataset
+
                 std::vector<std::vector<Point> > textureIdx;
+                //!<  index for warping of each delaunay triangle region constructed by 3 facemarks
                 std::vector<Point2f> base_shape;
-                std::vector<int> ind1, ind2;
+                //!<  basic shape, normalized to be fit in an image with current detection resolution
+                std::vector<int> ind1;
+                //!<  index of pixels for mapping process to obtains the grays values of face region
+                std::vector<int> ind2;
+                //!<  index of pixels for mapping process to obtains the grays values of eroded face region
             };
             std::vector<Texture> textures;
+            //!<  a container to holds the texture data for each scale of fitting
 
             /*shape*/
             std::vector<Point2f> s0;
+            //!<  the basic shape obtained from training dataset
             Mat S,Q;
+            //!<  the encoded shapes from training data
+
         };
+
+        /**
+        * \brief a custom fitting function designed for AAM algorithm
+        * AAM fitting relies on basic shape as initializer,
+        * are used to adjust the initial points for fitting
+        */
         virtual bool fit( InputArray image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale )=0;
+
+        //!<  initializer
         static Ptr<FacemarkAAM> create(const FacemarkAAM::Params &parameters = FacemarkAAM::Params() );
         virtual ~FacemarkAAM() {}
 
