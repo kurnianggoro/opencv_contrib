@@ -83,7 +83,7 @@ namespace face {
 
     protected:
 
-        bool fit( InputArray image, InputArray faces, std::vector<std::vector<Point2f> > & landmarks );//!< from many ROIs
+        bool fit( InputArray image, InputArray faces, InputOutputArray landmarks );//!< from many ROIs
         bool fitImpl( const Mat image, std::vector<Point2f> & landmarks );//!< from a face
 
         // void trainingImpl(String imageList, String groundTruth, const FacemarkLBF::Params &parameters);
@@ -318,9 +318,12 @@ namespace face {
         isModelTrained = true;
     }
 
-    bool FacemarkLBFImpl::fit( InputArray image, InputArray roi, std::vector<std::vector<Point2f> > &  landmarks )
+    bool FacemarkLBFImpl::fit( InputArray image, InputArray roi, InputOutputArray  _landmarks )
     {
-        std::vector<Rect> faces = roi.getMat();
+        std::vector<Rect> & faces = *(std::vector<Rect>*)roi.getObj();
+        std::vector<std::vector<Point2f> > & landmarks =
+            *(std::vector<std::vector<Point2f> >*) _landmarks.getObj();
+
         landmarks.resize(faces.size());
 
         for(unsigned i=0; i<faces.size();i++){

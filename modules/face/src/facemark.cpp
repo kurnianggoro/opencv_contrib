@@ -32,11 +32,14 @@ namespace face {
         return true;
     }
 
-    bool loadTrainingData(String filename, std::vector<String> & images, std::vector<std::vector<Point2f> > & facePoints, char delim, float offset){
+    bool loadTrainingData(String filename, std::vector<String> & images, OutputArray _facePoints, char delim, float offset){
         std::string line;
         std::string item;
         std::vector<Point2f> pts;
         std::vector<float> raw;
+
+        std::vector<std::vector<Point2f> > & facePoints =
+            *(std::vector<std::vector<Point2f> >*) _facePoints.getObj();
 
         std::ifstream infile;
         infile.open(filename.c_str(), std::ios::in);
@@ -74,9 +77,12 @@ namespace face {
         return true;
     }
 
-    bool loadTrainingData(String imageList, String groundTruth, std::vector<String> & images, std::vector<std::vector<Point2f> > & facePoints, float offset){
+    bool loadTrainingData(String imageList, String groundTruth, std::vector<String> & images, OutputArray _facePoints, float offset){
         std::string line;
         std::vector<Point2f> facePts;
+
+        std::vector<std::vector<Point2f> > & facePoints =
+                *(std::vector<std::vector<Point2f> >*) _facePoints.getObj();
 
         /*clear the output containers*/
         images.clear();
