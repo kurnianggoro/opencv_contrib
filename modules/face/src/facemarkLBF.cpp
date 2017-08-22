@@ -76,14 +76,14 @@ namespace face {
         // void saveModel(String fs);
         void loadModel(String fs);
 
-        bool setFaceDetector(bool(*f)(const Mat , std::vector<Rect> & ));
-        bool getFaces( const Mat image , std::vector<Rect> & faces);
+        bool setFaceDetector(bool(*f)(InputArray , OutputArray ));
+        bool getFaces( InputArray image , OutputArray faces);
 
         Params params;
 
     protected:
 
-        bool fit( InputArray image, std::vector<Rect> faces, std::vector<std::vector<Point2f> > & landmarks );//!< from many ROIs
+        bool fit( InputArray image, InputArray faces, std::vector<std::vector<Point2f> > & landmarks );//!< from many ROIs
         bool fitImpl( const Mat image, std::vector<Point2f> & landmarks );//!< from a face
 
         // void trainingImpl(String imageList, String groundTruth, const FacemarkLBF::Params &parameters);
@@ -98,7 +98,7 @@ namespace face {
         bool defaultFaceDetector(const Mat image, std::vector<Rect> & faces);
 
         CascadeClassifier face_cascade;
-        bool(*faceDetector)(const Mat , std::vector<Rect> &  ) ;
+        bool(*faceDetector)(InputArray , OutputArray);
         bool isSetDetector;
 
     private:
@@ -201,7 +201,7 @@ namespace face {
         params = parameters;
     }
 
-    bool FacemarkLBFImpl::setFaceDetector(bool(*f)(const Mat , std::vector<Rect> & )){
+    bool FacemarkLBFImpl::setFaceDetector(bool(*f)(InputArray , OutputArray )){
         faceDetector = f;
         isSetDetector = true;
         printf("face detector is configured\n");
@@ -209,16 +209,17 @@ namespace face {
     }
 
 
-    bool FacemarkLBFImpl::getFaces( const Mat  image , std::vector<Rect> & faces){
+    bool FacemarkLBFImpl::getFaces( InputArray image , OutputArray roi){
 
         if(!isSetDetector){
             return false;
         }
 
+        std::vector<Rect> faces;
         faces.clear();
 
-        faceDetector(image, faces);
-
+        faceDetector(image.getMat(), faces);
+        Mat(faces).copyTo(roi);
         return true;
     }
 
@@ -317,8 +318,9 @@ namespace face {
         isModelTrained = true;
     }
 
-    bool FacemarkLBFImpl::fit( InputArray image, std::vector<Rect> faces, std::vector<std::vector<Point2f> > &  landmarks )
+    bool FacemarkLBFImpl::fit( InputArray image, InputArray roi, std::vector<std::vector<Point2f> > &  landmarks )
     {
+        std::vector<Rect> faces = roi.getMat();
         landmarks.resize(faces.size());
 
         for(unsigned i=0; i<faces.size();i++){

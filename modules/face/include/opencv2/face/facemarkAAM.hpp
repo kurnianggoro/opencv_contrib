@@ -4,6 +4,10 @@
 #include "opencv2/face/facemark.hpp"
 namespace cv {
 namespace face {
+
+//! @addtogroup facemark
+//! @{
+
     class CV_EXPORTS_W FacemarkAAM : public Facemark
     {
     public:
@@ -83,6 +87,8 @@ namespace face {
         virtual ~FacemarkAAM() {}
 
     }; /* AAM */
+
+//! @}
 
 } /* namespace face */
 } /* namespace cv */
