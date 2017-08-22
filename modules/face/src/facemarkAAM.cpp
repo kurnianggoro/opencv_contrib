@@ -43,7 +43,7 @@ namespace face {
 
     protected:
 
-        bool fit( InputArray image, InputArray faces, std::vector<std::vector<Point2f> > & landmarks );//!< from many ROIs
+        bool fit( InputArray image, InputArray faces, InputOutputArray landmarks );//!< from many ROIs
         bool fit( InputArray image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale );
         bool fitImpl( const Mat image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale );
 
@@ -241,9 +241,11 @@ namespace face {
         printf("training is finished\n");
     }
 
-    bool FacemarkAAMImpl::fit( InputArray image, InputArray roi, std::vector<std::vector<Point2f> > &  landmarks )
+    bool FacemarkAAMImpl::fit( InputArray image, InputArray roi, InputOutputArray _landmarks )
     {
         std::vector<Rect> faces = roi.getMat();
+        std::vector<std::vector<Point2f> > & landmarks =
+            *(std::vector<std::vector<Point2f> >*) _landmarks.getObj();
         landmarks.resize(faces.size());
 
         Mat R =  Mat::eye(2, 2, CV_32F);

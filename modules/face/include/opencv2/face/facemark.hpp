@@ -32,12 +32,12 @@ namespace face {
                                     String face_cascade_name );
 
     CV_EXPORTS_W bool loadTrainingData( String filename , std::vector<String> & images,
-                                        std::vector<std::vector<Point2f> > & facePoints,
+                                        OutputArray facePoints,
                                         char delim = ' ', float offset = 0.0);
 
     CV_EXPORTS_W bool loadTrainingData( String imageList, String groundTruth,
                                         std::vector<String> & images,
-                                        std::vector<std::vector<Point2f> > & facePoints,
+                                        OutputArray facePoints,
                                         float offset = 0.0);
 
     CV_EXPORTS_W bool loadFacePoints( String filename, OutputArray points,
@@ -91,7 +91,7 @@ namespace face {
         /**
         * \brief extract landmark points from a face
         */
-        virtual bool fit( InputArray image, InputArray faces, std::vector<std::vector<Point2f> > & landmarks )=0;//!< from many ROIs
+        virtual bool fit( InputArray image, InputArray faces, InputOutputArray landmarks )=0;//!< from many ROIs
 
         virtual bool setFaceDetector(bool(*f)(InputArray , OutputArray ))=0;
         //!<  set the custom face detector
