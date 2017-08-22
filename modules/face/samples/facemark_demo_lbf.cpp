@@ -31,13 +31,13 @@
 
  using namespace std;
  using namespace cv;
-using namespace cv::face;
+ using namespace cv::face;
 
  int main()
  {
      /*create the facemark instance*/
      FacemarkLBF::Params params;
-     params.saved_file_name = "ibug68.model";
+     params.model_filename = "ibug68.model";
      params.cascade_face = "../data/haarcascade_frontalface_alt.xml";
      Ptr<Facemark> facemark = FacemarkLBF::create(params);
 

@@ -23,8 +23,6 @@ namespace face {
     } while(0)
 
     FacemarkLBF::Params::Params(){
-        detect_thresh = 0.5;
-        sigma=0.2;
 
         cascade_face = "../data/haarcascade_frontalface_alt.xml";
         shape_offset = 0.0;
@@ -34,7 +32,7 @@ namespace face {
         tree_n=6;
         tree_depth=5;
         bagging_overlap = 0.4;
-        saved_file_name = "ibug.model";
+        model_filename = "ibug.model";
 
         int _pupils[][6] = { { 36, 37, 38, 39, 40, 41 }, { 42, 43, 44, 45, 46, 47 } };
         for (int i = 0; i < 6; i++) {
@@ -52,28 +50,28 @@ namespace face {
         detectROI = Rect(-1,-1,-1,-1);
     }
 
-    void FacemarkLBF::Params::read( const cv::FileNode& fn ){
-        *this = FacemarkLBF::Params();
-
-        if (!fn["detect_thresh"].empty())
-            fn["detect_thresh"] >> detect_thresh;
-
-        if (!fn["sigma"].empty())
-            fn["sigma"] >> sigma;
-
-    }
-
-    void FacemarkLBF::Params::write( cv::FileStorage& fs ) const{
-        fs << "detect_thresh" << detect_thresh;
-        fs << "sigma" << sigma;
-    }
+    // void FacemarkLBF::Params::read( const cv::FileNode& fn ){
+    //     *this = FacemarkLBF::Params();
+    //
+    //     if (!fn["detect_thresh"].empty())
+    //         fn["detect_thresh"] >> detect_thresh;
+    //
+    //     if (!fn["sigma"].empty())
+    //         fn["sigma"] >> sigma;
+    //
+    // }
+    //
+    // void FacemarkLBF::Params::write( cv::FileStorage& fs ) const{
+    //     fs << "detect_thresh" << detect_thresh;
+    //     fs << "sigma" << sigma;
+    // }
 
     class FacemarkLBFImpl : public FacemarkLBF {
     public:
         FacemarkLBFImpl( const FacemarkLBF::Params &parameters = FacemarkLBF::Params() );
 
-        void read( const FileNode& /*fn*/ );
-        void write( FileStorage& /*fs*/ ) const;
+        // void read( const FileNode& /*fn*/ );
+        // void write( FileStorage& /*fs*/ ) const;
 
         // void saveModel(String fs);
         void loadModel(String fs);
@@ -311,7 +309,7 @@ namespace face {
         lbf.init(params);
         lbf.training(imgs, gt_shapes, current_shapes, bboxes, mean_shape, 0, params);
 
-        FILE *fd = fopen(params.saved_file_name.c_str(), "wb");
+        FILE *fd = fopen(params.model_filename.c_str(), "wb");
         assert(fd);
         lbf.write(fd, params);
         fclose(fd);
@@ -386,13 +384,13 @@ namespace face {
         return 1;
     }
 
-    void FacemarkLBFImpl::read( const cv::FileNode& fn ){
-        params.read( fn );
-    }
-
-    void FacemarkLBFImpl::write( cv::FileStorage& fs ) const {
-        params.write( fs );
-    }
+    // void FacemarkLBFImpl::read( const cv::FileNode& fn ){
+    //     params.read( fn );
+    // }
+    //
+    // void FacemarkLBFImpl::write( cv::FileStorage& fs ) const {
+    //     params.write( fs );
+    // }
 
     // void FacemarkLBFImpl::saveModel(String s){
     //

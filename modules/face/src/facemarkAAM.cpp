@@ -9,31 +9,31 @@ namespace face {
     * Parameters
     */
     FacemarkAAM::Params::Params(){
-        detect_thresh = 0.5;
-        sigma=0.2;
+        // detect_thresh = 0.5;
+        // sigma=0.2;
     }
 
-    void FacemarkAAM::Params::read( const cv::FileNode& fn ){
-        *this = FacemarkAAM::Params();
-
-        if (!fn["detect_thresh"].empty())
-            fn["detect_thresh"] >> detect_thresh;
-
-        if (!fn["sigma"].empty())
-            fn["sigma"] >> sigma;
-
-    }
-
-    void FacemarkAAM::Params::write( cv::FileStorage& fs ) const{
-        fs << "detect_thresh" << detect_thresh;
-        fs << "sigma" << sigma;
-    }
+    // void FacemarkAAM::Params::read( const cv::FileNode& fn ){
+    //     *this = FacemarkAAM::Params();
+    //
+    //     if (!fn["detect_thresh"].empty())
+    //         fn["detect_thresh"] >> detect_thresh;
+    //
+    //     if (!fn["sigma"].empty())
+    //         fn["sigma"] >> sigma;
+    //
+    // }
+    //
+    // void FacemarkAAM::Params::write( cv::FileStorage& fs ) const{
+    //     fs << "detect_thresh" << detect_thresh;
+    //     fs << "sigma" << sigma;
+    // }
 
     class FacemarkAAMImpl : public FacemarkAAM {
     public:
         FacemarkAAMImpl( const FacemarkAAM::Params &parameters = FacemarkAAM::Params() );
-        void read( const FileNode& /*fn*/ );
-        void write( FileStorage& /*fs*/ ) const;
+        // void read( const FileNode& /*fn*/ );
+        // void write( FileStorage& /*fs*/ ) const;
 
         void saveModel(String fs);
         void loadModel(String fs);
@@ -96,13 +96,13 @@ namespace face {
         isModelTrained = false;
     }
 
-    void FacemarkAAMImpl::read( const cv::FileNode& fn ){
-        params.read( fn );
-    }
-
-    void FacemarkAAMImpl::write( cv::FileStorage& fs ) const {
-        params.write( fs );
-    }
+    // void FacemarkAAMImpl::read( const cv::FileNode& fn ){
+    //     params.read( fn );
+    // }
+    //
+    // void FacemarkAAMImpl::write( cv::FileStorage& fs ) const {
+    //     params.write( fs );
+    // }
 
     bool FacemarkAAMImpl::setFaceDetector(bool(*f)(const Mat , std::vector<Rect> & )){
         faceDetector = f;
