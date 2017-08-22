@@ -17,16 +17,18 @@
 namespace cv {
 namespace face {
 
-    bool getFacesHaar( const Mat image, std::vector<Rect> & faces, String face_cascade_name ){
+    bool getFacesHaar( InputArray image, OutputArray faces, String face_cascade_name ){
         Mat gray;
+        std::vector<Rect> roi;
 
         CascadeClassifier face_cascade;
         if( !face_cascade.load( face_cascade_name ) ){ printf("--(!)Error loading face_cascade\n"); return false; };
 
-        cvtColor( image, gray, CV_BGR2GRAY );
+        cvtColor( image.getMat(), gray, CV_BGR2GRAY );
         equalizeHist( gray, gray );
-        face_cascade.detectMultiScale( gray, faces, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, Size(30, 30) );
+        face_cascade.detectMultiScale( gray, roi, 1.1, 2, 0|CV_HAAR_SCALE_IMAGE, Size(30, 30) );
 
+        Mat(roi).copyTo(faces);
         return true;
     }
 
@@ -103,9 +105,10 @@ namespace face {
         return true;
     }
 
-    bool loadFacePoints(String filename, std::vector<Point2f> & pts, float offset){
-        std::string line, item;
+    bool loadFacePoints(String filename, OutputArray points, float offset){
+        std::vector<Point2f> pts;
 
+        std::string line, item;
         std::ifstream infile(filename.c_str());
 
         /*pop the version*/
@@ -140,12 +143,15 @@ namespace face {
 
         }
 
+        Mat(pts).copyTo(points);
         return true;
     }
 
-    void drawFacemarks(Mat & image, std::vector<Point2f> pts, Scalar color){
+    void drawFacemarks(InputOutputArray image, InputArray points, Scalar color){
+        Mat img = image.getMat();
+        std::vector<Point2f> pts = points.getMat();
         for(size_t i=0;i<pts.size();i++){
-            circle(image, pts[i],3, color,-1);
+            circle(img, pts[i],3, color,-1);
         }
     } //drawPoints
 

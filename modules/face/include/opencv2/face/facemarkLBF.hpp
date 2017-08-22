@@ -5,6 +5,10 @@
 
 namespace cv {
 namespace face {
+
+//! @addtogroup facemark
+//! @{
+
     class CV_EXPORTS_W FacemarkLBF : public Facemark
     {
     public:
@@ -66,6 +70,9 @@ namespace face {
         static Ptr<FacemarkLBF> create(const FacemarkLBF::Params &parameters = FacemarkLBF::Params() );
         virtual ~FacemarkLBF(){};
     }; /* LBF */
+
+//! @}
+
 } /* namespace face */
 }/* namespace cv */
 

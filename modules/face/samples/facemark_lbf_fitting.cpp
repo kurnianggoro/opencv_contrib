@@ -20,7 +20,7 @@ using namespace std;
 using namespace cv;
 using namespace cv::face;
 
-bool myDetector( const Mat image, std::vector<Rect> & faces );
+bool myDetector( InputArray image, OutputArray ROIs );
 
 int main(int argc, char** argv ){
     if(argc <2){
@@ -100,18 +100,18 @@ int main(int argc, char** argv ){
 }
 
 CascadeClassifier face_cascade(DETECTOR_MODEL);
-bool myDetector( const Mat image, std::vector<Rect> & faces ){
+bool myDetector( InputArray image, OutputArray ROIs ){
     Mat gray;
-    faces.clear();
+    std::vector<Rect> faces;
 
     if(image.channels()>1){
-        cvtColor(image,gray,CV_BGR2GRAY);
+        cvtColor(image.getMat(),gray,CV_BGR2GRAY);
     }else{
-        gray = image.clone();
+        gray = image.getMat().clone();
     }
     equalizeHist( gray, gray );
 
     face_cascade.detectMultiScale( gray, faces, 1.4, 2, CV_HAAR_SCALE_IMAGE, Size(30, 30) );
-
-  return true;
+    Mat(faces).copyTo(ROIs);
+    return true;
 }

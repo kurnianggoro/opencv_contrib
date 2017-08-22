@@ -38,12 +38,12 @@ namespace face {
         void saveModel(String fs);
         void loadModel(String fs);
 
-        bool setFaceDetector(bool(*f)(const Mat , std::vector<Rect> & ));
-        bool getFaces( const Mat image , std::vector<Rect> & faces);
+        bool setFaceDetector(bool(*f)(InputArray , OutputArray ));
+        bool getFaces( InputArray image ,OutputArray faces);
 
     protected:
 
-        bool fit( InputArray image, std::vector<Rect> faces, std::vector<std::vector<Point2f> > & landmarks );//!< from many ROIs
+        bool fit( InputArray image, InputArray faces, std::vector<std::vector<Point2f> > & landmarks );//!< from many ROIs
         bool fit( InputArray image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale );
         bool fitImpl( const Mat image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale );
 
@@ -75,7 +75,7 @@ namespace face {
 
         FacemarkAAM::Params params;
         FacemarkAAM::Model AAM;
-        bool(*faceDetector)(const Mat , std::vector<Rect> &  ) ;
+        bool(*faceDetector)(InputArray , OutputArray);
         bool isSetDetector;
 
     private:
@@ -104,7 +104,7 @@ namespace face {
     //     params.write( fs );
     // }
 
-    bool FacemarkAAMImpl::setFaceDetector(bool(*f)(const Mat , std::vector<Rect> & )){
+    bool FacemarkAAMImpl::setFaceDetector(bool(*f)(InputArray , OutputArray )){
         faceDetector = f;
         isSetDetector = true;
         printf("face detector is configured\n");
@@ -112,16 +112,17 @@ namespace face {
     }
 
 
-    bool FacemarkAAMImpl::getFaces( const Mat  image , std::vector<Rect> & faces){
+    bool FacemarkAAMImpl::getFaces( InputArray image , OutputArray roi){
 
         if(!isSetDetector){
             return false;
         }
 
+        std::vector<Rect> faces;
         faces.clear();
 
-        faceDetector(image, faces);
-
+        faceDetector(image.getMat(), faces);
+        Mat(faces).copyTo(roi);
         return true;
     }
 
@@ -240,8 +241,9 @@ namespace face {
         printf("training is finished\n");
     }
 
-    bool FacemarkAAMImpl::fit( InputArray image, std::vector<Rect> faces, std::vector<std::vector<Point2f> > &  landmarks )
+    bool FacemarkAAMImpl::fit( InputArray image, InputArray roi, std::vector<std::vector<Point2f> > &  landmarks )
     {
+        std::vector<Rect> faces = roi.getMat();
         landmarks.resize(faces.size());
 
         Mat R =  Mat::eye(2, 2, CV_32F);
