@@ -167,7 +167,7 @@ namespace face {
             ~Regressor(){};
 
             void initRegressor(Params);
-            void training(std::vector<cv::Mat> &imgs, std::vector<cv::Mat> &gt_shapes, \
+            void trainRegressor(std::vector<cv::Mat> &imgs, std::vector<cv::Mat> &gt_shapes, \
                        std::vector<cv::Mat> &current_shapes, std::vector<BBox> &bboxes, \
                        cv::Mat &mean_shape, int start_from, Params );
             void globalRegressionTrain(std::vector<Mat> &lbfs, std::vector<Mat> &delta_shapes, int stage, Params);
@@ -184,7 +184,7 @@ namespace face {
             std::vector<cv::Mat> gl_regression_weights;
         }; // LBF
 
-        Regressor lbf;
+        Regressor regressor;
     }; // class
 
     /*
@@ -307,12 +307,12 @@ namespace face {
         std::random_shuffle(current_shapes.begin(), current_shapes.end());
 
 
-        lbf.initRegressor(params);
-        lbf.training(imgs, gt_shapes, current_shapes, bboxes, mean_shape, 0, params);
+        regressor.initRegressor(params);
+        regressor.trainRegressor(imgs, gt_shapes, current_shapes, bboxes, mean_shape, 0, params);
 
         FILE *fd = fopen(params.model_filename.c_str(), "wb");
         assert(fd);
-        lbf.write(fd, params);
+        regressor.write(fd, params);
         fclose(fd);
 
         isModelTrained = true;
@@ -377,7 +377,7 @@ namespace face {
 
         BBox bbox(box.x - min_x, box.y - min_y, box.width, box.height);
         Mat crop = img(Rect((int)min_x, (int)min_y, (int)w, (int)h)).clone();
-        Mat shape = lbf.predict(crop, bbox);
+        Mat shape = regressor.predict(crop, bbox);
 
         if(params.detectROI.width>0){
             landmarks = Mat(shape.reshape(2)+Scalar(min_x, min_y));
@@ -411,7 +411,7 @@ namespace face {
         }
 
         FILE *fd = fopen(s.c_str(), "rb");
-        lbf.read(fd, params);
+        regressor.read(fd, params);
         fclose(fd);
 
         isModelTrained = true;
@@ -985,26 +985,26 @@ namespace face {
 
 
     /*---------------Regressor Implementation---------------------*/
-    void FacemarkLBFImpl::Regressor::initRegressor(Params params) {
-        stages_n = params.stages_n;
-        landmark_n = params.n_landmarks;
+    void FacemarkLBFImpl::Regressor::initRegressor(Params config) {
+        stages_n = config.stages_n;
+        landmark_n = config.n_landmarks;
 
         random_forests.resize(stages_n);
         for (int i = 0; i < stages_n; i++)
-            random_forests[i].initForest(params.n_landmarks, params.tree_n, params.tree_depth, params.bagging_overlap, params.feats_m, params.radius_m);
+            random_forests[i].initForest(config.n_landmarks, config.tree_n, config.tree_depth, config.bagging_overlap, config.feats_m, config.radius_m);
 
-        mean_shape.create(params.n_landmarks, 2, CV_64FC1);
+        mean_shape.create(config.n_landmarks, 2, CV_64FC1);
 
         gl_regression_weights.resize(stages_n);
-        int F = params.n_landmarks * params.tree_n * (1 << (params.tree_depth - 1));
+        int F = config.n_landmarks * config.tree_n * (1 << (config.tree_depth - 1));
 
         for (int i = 0; i < stages_n; i++) {
-            gl_regression_weights[i].create(2 * params.n_landmarks, F, CV_64FC1);
+            gl_regression_weights[i].create(2 * config.n_landmarks, F, CV_64FC1);
         }
     }
 
-    void FacemarkLBFImpl::Regressor::training(std::vector<Mat> &imgs, std::vector<Mat> &gt_shapes, std::vector<Mat> &current_shapes,
-                            std::vector<BBox> &bboxes, Mat &mean_shape_, int start_from, Params params) {
+    void FacemarkLBFImpl::Regressor::trainRegressor(std::vector<Mat> &imgs, std::vector<Mat> &gt_shapes, std::vector<Mat> &current_shapes,
+                            std::vector<BBox> &bboxes, Mat &mean_shape_, int start_from, Params config) {
         assert(start_from >= 0 && start_from < stages_n);
         mean_shape = mean_shape_;
         int N = (int)imgs.size();
@@ -1029,7 +1029,7 @@ namespace face {
             // global regression
             printf("start train global regression of %dth stage\n", k);
             TIMER_BEGIN
-                globalRegressionTrain(lbfs, delta_shapes, k, params);
+                globalRegressionTrain(lbfs, delta_shapes, k, config);
                 printf("end of train global regression of %dth stage, costs %.4lf s\n", k, TIMER_NOW);
             TIMER_END
 
@@ -1043,19 +1043,19 @@ namespace face {
             }
 
             // calc mean error
-            double e = calcMeanError(gt_shapes, current_shapes, params.n_landmarks, params.pupils[0],params.pupils[1]);
+            double e = calcMeanError(gt_shapes, current_shapes, config.n_landmarks, config.pupils[0],config.pupils[1]);
             printf("Train %dth stage Done with Error = %lf\n", k, e);
 
         } // for int k
     }//Regressor::training
 
     // Global Regression to predict delta shape with LBF
-    void FacemarkLBFImpl::Regressor::globalRegressionTrain(std::vector<Mat> &lbfs, std::vector<Mat> &delta_shapes, int stage, Params params) {
+    void FacemarkLBFImpl::Regressor::globalRegressionTrain(std::vector<Mat> &lbfs, std::vector<Mat> &delta_shapes, int stage, Params config) {
         int N = (int)lbfs.size();
         int M = lbfs[0].cols;
-        int F = params.n_landmarks*params.tree_n*(1 << (params.tree_depth - 1));
+        int F = config.n_landmarks*config.tree_n*(1 << (config.tree_depth - 1));
         int landmark_n_ = delta_shapes[0].rows;
-        // prepare linear regression params X and Y
+        // prepare linear regression config X and Y
         struct liblinear::feature_node **X = (struct liblinear::feature_node **)malloc(N * sizeof(struct liblinear::feature_node *));
         double **Y = (double **)malloc(landmark_n_ * 2 * sizeof(double *));
         for (int i = 0; i < N; i++) {
@@ -1164,13 +1164,13 @@ namespace face {
         return current_shape;
     } // Regressor::predict
 
-    void FacemarkLBFImpl::Regressor::write(FILE *fd, Params params) {
+    void FacemarkLBFImpl::Regressor::write(FILE *fd, Params config) {
 
         // global parameters
-        fwrite(&params.stages_n, sizeof(int), 1, fd);
-        fwrite(&params.tree_n, sizeof(int), 1, fd);
-        fwrite(&params.tree_depth, sizeof(int), 1, fd);
-        fwrite(&params.n_landmarks, sizeof(int), 1, fd);
+        fwrite(&config.stages_n, sizeof(int), 1, fd);
+        fwrite(&config.tree_n, sizeof(int), 1, fd);
+        fwrite(&config.tree_depth, sizeof(int), 1, fd);
+        fwrite(&config.n_landmarks, sizeof(int), 1, fd);
         // mean_shape
         double *ptr = NULL;
         for (int i = 0; i < mean_shape.rows; i++) {
@@ -1178,26 +1178,26 @@ namespace face {
             fwrite(ptr, sizeof(double), mean_shape.cols, fd);
         }
         // every stages
-        for (int k = 0; k < params.stages_n; k++) {
+        for (int k = 0; k < config.stages_n; k++) {
             printf("Write %dth stage\n", k);
             random_forests[k].write(fd);
-            for (int i = 0; i < 2 * params.n_landmarks; i++) {
+            for (int i = 0; i < 2 * config.n_landmarks; i++) {
                 ptr = gl_regression_weights[k].ptr<double>(i);
                 fwrite(ptr, sizeof(double), gl_regression_weights[k].cols, fd);
             }
         }
     }
 
-    void FacemarkLBFImpl::Regressor::read(FILE *fd, Params & params){
+    void FacemarkLBFImpl::Regressor::read(FILE *fd, Params & config){
 
-        size_t status = fread(&params.stages_n, sizeof(int), 1, fd);
-        status = fread(&params.tree_n, sizeof(int), 1, fd);
-        status = fread(&params.tree_depth, sizeof(int), 1, fd);
-        status = fread(&params.n_landmarks, sizeof(int), 1, fd);
-        stages_n = params.stages_n;
-        landmark_n = params.n_landmarks;
+        size_t status = fread(&config.stages_n, sizeof(int), 1, fd);
+        status = fread(&config.tree_n, sizeof(int), 1, fd);
+        status = fread(&config.tree_depth, sizeof(int), 1, fd);
+        status = fread(&config.n_landmarks, sizeof(int), 1, fd);
+        stages_n = config.stages_n;
+        landmark_n = config.n_landmarks;
 
-        initRegressor(params);
+        initRegressor(config);
 
         // mean_shape
         double *ptr = NULL;
@@ -1209,9 +1209,9 @@ namespace face {
 
         // every stages
         for (int k = 0; k < stages_n; k++) {
-            random_forests[k].initForest(params.n_landmarks, params.tree_n, params.tree_depth, params.bagging_overlap, params.feats_m, params.radius_m);
+            random_forests[k].initForest(config.n_landmarks, config.tree_n, config.tree_depth, config.bagging_overlap, config.feats_m, config.radius_m);
             random_forests[k].read(fd);
-            for (int i = 0; i < 2 * params.n_landmarks; i++) {
+            for (int i = 0; i < 2 * config.n_landmarks; i++) {
                 ptr = gl_regression_weights[k].ptr<double>(i);
                 status = fread(ptr, sizeof(double), gl_regression_weights[k].cols, fd);
             }
