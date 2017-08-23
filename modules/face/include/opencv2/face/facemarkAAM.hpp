@@ -80,7 +80,7 @@ namespace face {
         * AAM fitting relies on basic shape as initializer,
         * are used to adjust the initial points for fitting
         */
-        virtual bool fit( InputArray image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale )=0;
+        virtual bool fitSingle( InputArray image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale )=0;
 
         //!<  initializer
         static Ptr<FacemarkAAM> create(const FacemarkAAM::Params &parameters = FacemarkAAM::Params() );

@@ -12,7 +12,7 @@
 namespace cv {
 namespace face {
 
-    #define TIMER_BEGIN { double __time__ = getTickCount();
+    #define TIMER_BEGIN { double __time__ = (double)getTickCount();
     #define TIMER_NOW   ((getTickCount() - __time__) / getTickFrequency())
     #define TIMER_END   }
 
@@ -122,7 +122,7 @@ namespace face {
             RandomTree(){};
             ~RandomTree(){};
 
-            void init(int landmark_id, int depth, std::vector<int>, std::vector<double>);
+            void initTree(int landmark_id, int depth, std::vector<int>, std::vector<double>);
             void train(std::vector<Mat> &imgs, std::vector<Mat> &current_shapes, std::vector<BBox> &bboxes,
                        std::vector<Mat> &delta_shapes, Mat &mean_shape, std::vector<int> &index, int stage);
             void splitNode(std::vector<cv::Mat> &imgs, std::vector<cv::Mat> &current_shapes, std::vector<BBox> &bboxes,
@@ -145,7 +145,7 @@ namespace face {
             RandomForest(){};
             ~RandomForest(){};
 
-            void init(int landmark_n, int trees_n, int tree_depth, double ,  std::vector<int>, std::vector<double>);
+            void initForest(int landmark_n, int trees_n, int tree_depth, double ,  std::vector<int>, std::vector<double>);
             void train(std::vector<cv::Mat> &imgs, std::vector<cv::Mat> &current_shapes, \
                        std::vector<BBox> &bboxes, std::vector<cv::Mat> &delta_shapes, cv::Mat &mean_shape, int stage);
             Mat generateLBF(Mat &img, Mat &current_shape, BBox &bbox, Mat &mean_shape);
@@ -166,7 +166,7 @@ namespace face {
             Regressor(){};
             ~Regressor(){};
 
-            void init(Params);
+            void initRegressor(Params);
             void training(std::vector<cv::Mat> &imgs, std::vector<cv::Mat> &gt_shapes, \
                        std::vector<cv::Mat> &current_shapes, std::vector<BBox> &bboxes, \
                        cv::Mat &mean_shape, int start_from, Params );
@@ -263,7 +263,7 @@ namespace face {
         std::vector<String> images;
         std::vector<std::vector<Point2f> > facePoints;
 
-        loadTrainingData(imageList, groundTruth, images, facePoints, params.shape_offset);
+        loadTrainingData(imageList, groundTruth, images, facePoints, (float)params.shape_offset);
 
         std::vector<Mat> cropped;
         std::vector<BBox> boxes;
@@ -276,7 +276,7 @@ namespace face {
 
         Mat mean_shape = getMeanShape(shapes, boxes);
 
-        int N = cropped.size();
+        int N = (int)cropped.size();
         int L = N*params.initShape_n;
         std::vector<Mat> imgs(L), gt_shapes(L), current_shapes(L);
         std::vector<BBox> bboxes(L);
@@ -296,7 +296,7 @@ namespace face {
         }
 
         // random shuffle
-        time_t seed = std::time(0);
+        unsigned int seed = (unsigned int)std::time(0);
         std::srand(seed);
         std::random_shuffle(imgs.begin(), imgs.end());
         std::srand(seed);
@@ -307,7 +307,7 @@ namespace face {
         std::random_shuffle(current_shapes.begin(), current_shapes.end());
 
 
-        lbf.init(params);
+        lbf.initRegressor(params);
         lbf.training(imgs, gt_shapes, current_shapes, bboxes, mean_shape, 0, params);
 
         FILE *fd = fopen(params.model_filename.c_str(), "wb");
@@ -376,7 +376,7 @@ namespace face {
         double h = max_y - min_y;
 
         BBox bbox(box.x - min_x, box.y - min_y, box.width, box.height);
-        Mat crop = img(Rect(min_x, min_y, w, h)).clone();
+        Mat crop = img(Rect((int)min_x, (int)min_y, (int)w, (int)h)).clone();
         Mat shape = lbf.predict(crop, bbox);
 
         if(params.detectROI.width>0){
@@ -464,7 +464,7 @@ namespace face {
         cropped.clear();
         shapes.clear();
 
-        int N = images.size();
+        int N = (int)images.size();
         for(int i=0; i<N;i++){
             printf("image #%i/%i\n", i, N);
             Mat img = imread(images[i].c_str(), 0);
@@ -491,7 +491,7 @@ namespace face {
 
                 facePts.push_back(facePoints[i]);
                 boxes.push_back(BBox(box.x - min_x, box.y - min_y, box.width, box.height));
-                Mat crop = img(Rect(min_x, min_y, w, h)).clone();
+                Mat crop = img(Rect((int)min_x, (int)min_y, (int)w, (int)h)).clone();
                 cropped.push_back(crop);
                 shapes.push_back(shape);
             }
@@ -501,7 +501,7 @@ namespace face {
     }
 
     void FacemarkLBFImpl::data_augmentation(std::vector<Mat> &imgs, std::vector<Mat> &gt_shapes, std::vector<BBox> &bboxes) {
-        int N = imgs.size();
+        int N = (int)imgs.size();
         imgs.reserve(2 * N);
         gt_shapes.reserve(2 * N);
         bboxes.reserve(2 * N);
@@ -516,10 +516,10 @@ namespace face {
                 gt_shape_flipped(k, 1) = gt_shapes[i].at<double>(k, 1);
             }
             int x_b, y_b, w_b, h_b;
-            x_b = w - bboxes[i].x - bboxes[i].width;
-            y_b = bboxes[i].y;
-            w_b = bboxes[i].width;
-            h_b = bboxes[i].height;
+            x_b = w - (int)bboxes[i].x - (int)bboxes[i].width;
+            y_b = (int)bboxes[i].y;
+            w_b = (int)bboxes[i].width;
+            h_b = (int)bboxes[i].height;
             BBox bbox_flipped(x_b, y_b, w_b, h_b);
 
             imgs.push_back(img_flipped);
@@ -614,7 +614,7 @@ namespace face {
 
     Mat FacemarkLBFImpl::getMeanShape(std::vector<Mat> &gt_shapes, std::vector<BBox> &bboxes) {
 
-        int N = gt_shapes.size();
+        int N = (int)gt_shapes.size();
         Mat mean_shape = Mat::zeros(gt_shapes[0].rows, 2, CV_64FC1);
         for (int i = 0; i < N; i++) {
             mean_shape += bboxes[i].project(gt_shapes[i]);
@@ -665,7 +665,7 @@ namespace face {
     std::vector<Mat> FacemarkLBFImpl::LBF::getDeltaShapes(std::vector<Mat> &gt_shapes, std::vector<Mat> &current_shapes,
                                std::vector<BBox> &bboxes, Mat &mean_shape) {
         std::vector<Mat> delta_shapes;
-        int N = gt_shapes.size();
+        int N = (int)gt_shapes.size();
         delta_shapes.resize(N);
         double scale;
         Mat_<double> rotate;
@@ -694,7 +694,7 @@ namespace face {
     }
 
     double FacemarkLBFImpl::LBF::calcMeanError(std::vector<Mat> &gt_shapes, std::vector<Mat> &current_shapes, int landmark_n , std::vector<int> &left, std::vector<int> &right ) {
-        int N = gt_shapes.size();
+        int N = (int)gt_shapes.size();
 
         double e = 0;
         // every train data
@@ -726,7 +726,7 @@ namespace face {
     }
 
     /*---------------RandomTree Implementation---------------------*/
-    void FacemarkLBFImpl::RandomTree::init(int _landmark_id, int _depth, std::vector<int> feats_m, std::vector<double> radius_m) {
+    void FacemarkLBFImpl::RandomTree::initTree(int _landmark_id, int _depth, std::vector<int> feats_m, std::vector<double> radius_m) {
         landmark_id = _landmark_id;
         depth = _depth;
         nodes_n = 1 << depth;
@@ -739,7 +739,7 @@ namespace face {
 
     void FacemarkLBFImpl::RandomTree::train(std::vector<Mat> &imgs, std::vector<Mat> &current_shapes, std::vector<BBox> &bboxes,
                            std::vector<Mat> &delta_shapes, Mat &mean_shape, std::vector<int> &index, int stage) {
-        Mat_<double> delta_shapes_(delta_shapes.size(), 2);
+        Mat_<double> delta_shapes_((int)delta_shapes.size(), 2);
         for (int i = 0; i < (int)delta_shapes.size(); i++) {
             delta_shapes_(i, 0) = delta_shapes[i].at<double>(landmark_id, 0);
             delta_shapes_(i, 1) = delta_shapes[i].at<double>(landmark_id, 1);
@@ -750,7 +750,7 @@ namespace face {
     void FacemarkLBFImpl::RandomTree::splitNode(std::vector<Mat> &imgs, std::vector<Mat> &current_shapes, std::vector<BBox> &bboxes,
                                Mat &delta_shapes, Mat &mean_shape, std::vector<int> &root, int idx, int stage) {
 
-        int N = root.size();
+        int N = (int)root.size();
         if (N == 0) {
             thresholds[idx] = 0;
             feats.row(idx).setTo(0);
@@ -878,7 +878,7 @@ namespace face {
     }
 
     /*---------------RandomForest Implementation---------------------*/
-    void FacemarkLBFImpl::RandomForest::init(int _landmark_n, int _trees_n, int _tree_depth, double _overlap_ratio, std::vector<int>_feats_m, std::vector<double>_radius_m) {
+    void FacemarkLBFImpl::RandomForest::initForest(int _landmark_n, int _trees_n, int _tree_depth, double _overlap_ratio, std::vector<int>_feats_m, std::vector<double>_radius_m) {
         trees_n = _trees_n;
         landmark_n = _landmark_n;
         tree_depth = _tree_depth;
@@ -890,13 +890,13 @@ namespace face {
         random_trees.resize(landmark_n);
         for (int i = 0; i < landmark_n; i++) {
             random_trees[i].resize(trees_n);
-            for (int j = 0; j < trees_n; j++) random_trees[i][j].init(i, tree_depth, feats_m, radius_m);
+            for (int j = 0; j < trees_n; j++) random_trees[i][j].initTree(i, tree_depth, feats_m, radius_m);
         }
     }
 
     void FacemarkLBFImpl::RandomForest::train(std::vector<Mat> &imgs, std::vector<Mat> &current_shapes, \
                              std::vector<BBox> &bboxes, std::vector<Mat> &delta_shapes, Mat &mean_shape, int stage) {
-        int N = imgs.size();
+        int N = (int)imgs.size();
         int Q = int(N / ((1. - overlap_ratio) * trees_n));
 
         #ifdef _OPENMP
@@ -919,7 +919,7 @@ namespace face {
     }
 
     Mat FacemarkLBFImpl::RandomForest::generateLBF(Mat &img, Mat &current_shape, BBox &bbox, Mat &mean_shape) {
-        Mat_<int> lbf(1, landmark_n*trees_n);
+        Mat_<int> lbf_feat(1, landmark_n*trees_n);
         double scale;
         Mat_<double> rotate;
         calcSimilarityTransform(bbox.project(current_shape), mean_shape, scale, rotate);
@@ -958,10 +958,10 @@ namespace face {
                         idx = 2 * idx + 1;
                     }
                 }
-                lbf(i*trees_n + j) = (i*trees_n + j)*base + code;
+                lbf_feat(i*trees_n + j) = (i*trees_n + j)*base + code;
             }
         }
-        return lbf;
+        return lbf_feat;
     }
 
 
@@ -977,7 +977,7 @@ namespace face {
     {
         for (int i = 0; i < landmark_n; i++) {
             for (int j = 0; j < trees_n; j++) {
-                random_trees[i][j].init(i, tree_depth, feats_m, radius_m);
+                random_trees[i][j].initTree(i, tree_depth, feats_m, radius_m);
                 random_trees[i][j].read(fd);
             }
         }
@@ -985,13 +985,13 @@ namespace face {
 
 
     /*---------------Regressor Implementation---------------------*/
-    void FacemarkLBFImpl::Regressor::init(Params params) {
+    void FacemarkLBFImpl::Regressor::initRegressor(Params params) {
         stages_n = params.stages_n;
         landmark_n = params.n_landmarks;
 
         random_forests.resize(stages_n);
         for (int i = 0; i < stages_n; i++)
-            random_forests[i].init(params.n_landmarks, params.tree_n, params.tree_depth, params.bagging_overlap, params.feats_m, params.radius_m);
+            random_forests[i].initForest(params.n_landmarks, params.tree_n, params.tree_depth, params.bagging_overlap, params.feats_m, params.radius_m);
 
         mean_shape.create(params.n_landmarks, 2, CV_64FC1);
 
@@ -1007,7 +1007,7 @@ namespace face {
                             std::vector<BBox> &bboxes, Mat &mean_shape_, int start_from, Params params) {
         assert(start_from >= 0 && start_from < stages_n);
         mean_shape = mean_shape_;
-        int N = imgs.size();
+        int N = (int)imgs.size();
 
         for (int k = start_from; k < stages_n; k++) {
             std::vector<Mat> delta_shapes = getDeltaShapes(gt_shapes, current_shapes, bboxes, mean_shape);
@@ -1051,7 +1051,7 @@ namespace face {
 
     // Global Regression to predict delta shape with LBF
     void FacemarkLBFImpl::Regressor::globalRegressionTrain(std::vector<Mat> &lbfs, std::vector<Mat> &delta_shapes, int stage, Params params) {
-        int N = lbfs.size();
+        int N = (int)lbfs.size();
         int M = lbfs[0].cols;
         int F = params.n_landmarks*params.tree_n*(1 << (params.tree_depth - 1));
         int landmark_n_ = delta_shapes[0].rows;
@@ -1064,7 +1064,8 @@ namespace face {
                 X[i][j].index = lbfs[i].at<int>(0, j) + 1; // index starts from 1
                 X[i][j].value = 1;
             }
-            X[i][M].index = X[i][M].value = -1;
+            X[i][M].index = -1;
+            X[i][M].value = -1;
         }
         for (int i = 0; i < landmark_n_; i++) {
             Y[2 * i] = (double *)malloc(N*sizeof(double));
@@ -1150,11 +1151,12 @@ namespace face {
         Mat current_shape = bbox.reproject(mean_shape);
         double scale;
         Mat rotate;
+        Mat lbf_feat;
         for (int k = 0; k < stages_n; k++) {
             // generate lbf
-            Mat lbf = random_forests[k].generateLBF(img, current_shape, bbox, mean_shape);
+            lbf_feat = random_forests[k].generateLBF(img, current_shape, bbox, mean_shape);
             // update current_shapes
-            Mat delta_shape = globalRegressionPredict(lbf, k);
+            Mat delta_shape = globalRegressionPredict(lbf_feat, k);
             delta_shape = delta_shape.reshape(0, landmark_n);
             calcSimilarityTransform(bbox.project(current_shape), mean_shape, scale, rotate);
             current_shape = bbox.reproject(bbox.project(current_shape) + scale * delta_shape * rotate.t());
@@ -1195,7 +1197,7 @@ namespace face {
         stages_n = params.stages_n;
         landmark_n = params.n_landmarks;
 
-        init(params);
+        initRegressor(params);
 
         // mean_shape
         double *ptr = NULL;
@@ -1207,7 +1209,7 @@ namespace face {
 
         // every stages
         for (int k = 0; k < stages_n; k++) {
-            random_forests[k].init(params.n_landmarks, params.tree_n, params.tree_depth, params.bagging_overlap, params.feats_m, params.radius_m);
+            random_forests[k].initForest(params.n_landmarks, params.tree_n, params.tree_depth, params.bagging_overlap, params.feats_m, params.radius_m);
             random_forests[k].read(fd);
             for (int i = 0; i < 2 * params.n_landmarks; i++) {
                 ptr = gl_regression_weights[k].ptr<double>(i);

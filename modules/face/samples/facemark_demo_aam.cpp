@@ -79,7 +79,7 @@ int main(int argc, char** argv )
 
     /*fitting process*/
     std::vector<Point2f> landmarks;
-    facemark->fit(image, landmarks, R,T, scale);
+    facemark->fitSingle(image, landmarks, R,T, scale);
     drawFacemarks(image, landmarks);
     imshow("fitting", image);
     waitKey(0);
