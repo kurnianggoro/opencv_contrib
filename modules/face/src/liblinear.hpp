@@ -1298,7 +1298,7 @@ l2r_l2_svc_fun::l2r_l2_svc_fun(const problem *_prob, double *_C)
 	z = new double[l];
 	D = new double[l];
 	I = new int[l];
-	this->C = _C;
+	C = _C;
 }
 
 l2r_l2_svc_fun::~l2r_l2_svc_fun()

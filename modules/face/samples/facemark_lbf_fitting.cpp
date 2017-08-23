@@ -62,22 +62,26 @@ int main(int argc, char** argv ){
         if(frame.empty())
             break;
 
-        double __time__ = getTickCount();
+        double __time__ = (double)getTickCount();
 
-        float scale = (400.0/frame.cols);
-        resize(frame, img, Size(frame.cols*scale, frame.rows*scale));
+        float scale = (float)(400.0/frame.cols);
+        resize(frame, img, Size((int)(frame.cols*scale), (int)(frame.rows*scale)));
 
         facemark->getFaces(img, rects);
         rects_scaled.clear();
 
         for(int j=0;j<(int)rects.size();j++){
-            rects_scaled.push_back(Rect(rects[j].x/scale,rects[j].y/scale,rects[j].width/scale,rects[j].height/scale));
+            rects_scaled.push_back(Rect(
+                (int)(rects[j].x/scale),
+                (int)(rects[j].y/scale),
+                (int)(rects[j].width/scale),
+                (int)(rects[j].height/scale)));
         }
         rects = rects_scaled;
         fittime=0;
-        nfaces = rects.size();
+        nfaces = (int)rects.size();
         if(rects.size()>0){
-            double newtime = getTickCount();
+            double newtime = (double)getTickCount();
 
             facemark->fit(frame, rects, landmarks);
 
@@ -104,7 +108,8 @@ int main(int argc, char** argv ){
 CascadeClassifier face_cascade(DETECTOR_MODEL);
 bool myDetector( InputArray image, OutputArray ROIs ){
     Mat gray;
-    std::vector<Rect> faces;
+    std::vector<Rect> & faces = *(std::vector<Rect>*) ROIs.getObj();
+    faces.clear();
 
     if(image.channels()>1){
         cvtColor(image.getMat(),gray,CV_BGR2GRAY);
@@ -114,6 +119,5 @@ bool myDetector( InputArray image, OutputArray ROIs ){
     equalizeHist( gray, gray );
 
     face_cascade.detectMultiScale( gray, faces, 1.4, 2, CV_HAAR_SCALE_IMAGE, Size(30, 30) );
-    Mat(faces).copyTo(ROIs);
     return true;
 }
