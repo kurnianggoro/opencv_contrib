@@ -1226,7 +1226,7 @@ void l2r_lr_fun::Hv(double *s, double *Hs)
 	delete[] wa;
 }
 
-void l2r_lr_fun::Xv(double *v, double *Xv)
+void l2r_lr_fun::Xv(double *v, double *_Xv)
 {
 	int i;
 	int l=prob->l;
@@ -1235,16 +1235,16 @@ void l2r_lr_fun::Xv(double *v, double *Xv)
 	for(i=0;i<l;i++)
 	{
 		feature_node *s=x[i];
-		Xv[i]=0;
+		_Xv[i]=0;
 		while(s->index!=-1)
 		{
-			Xv[i]+=v[s->index-1]*s->value;
+			_Xv[i]+=v[s->index-1]*s->value;
 			s++;
 		}
 	}
 }
 
-void l2r_lr_fun::XTv(double *v, double *XTv)
+void l2r_lr_fun::XTv(double *v, double *_XTv)
 {
 	int i;
 	int l=prob->l;
@@ -1252,13 +1252,13 @@ void l2r_lr_fun::XTv(double *v, double *XTv)
 	feature_node **x=prob->x;
 
 	for(i=0;i<w_size;i++)
-		XTv[i]=0;
+		_XTv[i]=0;
 	for(i=0;i<l;i++)
 	{
 		feature_node *s=x[i];
 		while(s->index!=-1)
 		{
-			XTv[s->index-1]+=v[i]*s->value;
+			_XTv[s->index-1]+=v[i]*s->value;
 			s++;
 		}
 	}
@@ -1374,7 +1374,7 @@ void l2r_l2_svc_fun::Hv(double *s, double *Hs)
 	delete[] wa;
 }
 
-void l2r_l2_svc_fun::Xv(double *v, double *Xv)
+void l2r_l2_svc_fun::Xv(double *v, double *_Xv)
 {
 	int i;
 	int l=prob->l;
@@ -1383,16 +1383,16 @@ void l2r_l2_svc_fun::Xv(double *v, double *Xv)
 	for(i=0;i<l;i++)
 	{
 		feature_node *s=x[i];
-		Xv[i]=0;
+		_Xv[i]=0;
 		while(s->index!=-1)
 		{
-			Xv[i]+=v[s->index-1]*s->value;
+			_Xv[i]+=v[s->index-1]*s->value;
 			s++;
 		}
 	}
 }
 
-void l2r_l2_svc_fun::subXv(double *v, double *Xv)
+void l2r_l2_svc_fun::subXv(double *v, double *_Xv)
 {
 	int i;
 	feature_node **x=prob->x;
@@ -1400,10 +1400,10 @@ void l2r_l2_svc_fun::subXv(double *v, double *Xv)
 	for(i=0;i<sizeI;i++)
 	{
 		feature_node *s=x[I[i]];
-		Xv[i]=0;
+		_Xv[i]=0;
 		while(s->index!=-1)
 		{
-			Xv[i]+=v[s->index-1]*s->value;
+			_Xv[i]+=v[s->index-1]*s->value;
 			s++;
 		}
 	}
@@ -2488,7 +2488,7 @@ static void solve_l1r_l2_svc(
 	double Gmax_new, Gnorm1_new;
 	double Gnorm1_init = -1.0; // Gnorm1_init is initialized at the first iteration
 	double d_old, d_diff;
-	double loss_old, loss_new;
+	double loss_old(0), loss_new;
 	double appxcond, cond;
 
 	int *index = new int[w_size];
@@ -3718,7 +3718,7 @@ struct model *load_model(const char *model_file_name)
 	// int i;
 	int nr_feature;
 	int n;
-	int nr_class;
+	int nr_class=0;
 	double bias;
 	model *model_ = Malloc(model,1);
 	parameter& param = model_->param;
