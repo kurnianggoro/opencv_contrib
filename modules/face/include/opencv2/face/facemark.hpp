@@ -54,6 +54,8 @@ namespace face {
     @param images A vector where each element represent the filename of image in the dataset.
     Images are not loaded by default to save the memory.
     @param facePoints The loaded landmark points for all training data.
+    @param delim Delimiter between each element, the default value is a whitespace.
+    @param offset An offset value to adjust the loaded points.
 
     <B>Example of usage</B>
     @code
@@ -79,6 +81,7 @@ namespace face {
     @param images A vector where each element represent the filename of image in the dataset.
     Images are not loaded by default to save the memory.
     @param facePoints The loaded landmark points for all training data.
+    @param offset An offset value to adjust the loaded points.
 
     <B>Example of usage</B>
     @code
@@ -165,6 +168,7 @@ namespace face {
     All facemark models in OpenCV are derived from the abstract base class Facemark, which
     provides a unified access to all facemark algorithms in OpenCV.
 
+    To utilize this API in your program, please take a look at the @ref tutorial_table_of_content_facemark
     ### Description
 
     Facemark is a base class which provides universal access to any specific facemark algorithm.
@@ -195,22 +199,107 @@ namespace face {
         // virtual void read( const FileNode& fn )=0;
         // virtual void write( FileStorage& fs ) const=0;
 
-        /**
-        * \brief training the facemark model, input are the file names of image list and landmark annotation
+        /** @brief Trains a Facemark algorithm using the given dataset.
+
+        @param imageList This file contains the list of image names in the dataset.
+        @param groundTruth This file contains the list of ground-truth files in the dataset.
+        The contents in ground-truth files should follows the default formatting (see face::loadFacePoints).
+
+        <B>Example of usage</B>
+        @code
+        FacemarkLBF::Params params;
+        params.model_filename = "ibug68.model"; // filename to save the trained model
+        Ptr<Facemark> facemark = FacemarkLBF::create(params);
+        String imageFiles = "../data/images_train.txt";
+        String ptsFiles = "../data/points_train.txt";
+        facemark->training(imageFiles, ptsFiles);
+        @endcode
+
+        example of content in the images_train.txt
+        @code
+        /home/user/ibug/image_003_1.jpg
+        /home/user/ibug/image_004_1.jpg
+        /home/user/ibug/image_005_1.jpg
+        /home/user/ibug/image_006.jpg
+        @endcode
+
+        example of content in the points_train.txt
+        @code
+        /home/user/ibug/image_003_1.pts
+        /home/user/ibug/image_004_1.pts
+        /home/user/ibug/image_005_1.pts
+        /home/user/ibug/image_006.pts
+        @endcode
         */
         virtual void training(String imageList, String groundTruth)=0;
-        virtual void loadModel(String fs)=0;
+
+        /** @brief A function to load the trained model before the fitting process.
+
+        @param model A string represent the filename of a trained model.
+
+        <B>Example of usage</B>
+        @code
+        facemark->loadModel("../data/lbf.model");
+        @endcode
+        */
+        virtual void loadModel(String model)=0;
         // virtual void saveModel(String fs)=0;
 
-        /**
-        * \brief extract landmark points from a face
-        */
-        virtual bool fit( InputArray image, InputArray faces, InputOutputArray landmarks )=0;//!< from many ROIs
+        /** @brief Trains a Facemark algorithm using the given dataset.
 
+        @param image Input image.
+        @param faces Output of the function which represent region of interest of the detected faces.
+        Each face is stored in cv::Rect container.
+        @param landmarks The detected landmark points for each faces.
+
+        <B>Example of usage</B>
+        @code
+        Mat image = imread("image.jpg");
+        std::vector<Rect> faces;
+        std::vector<std::vector<Point2f> > landmarks;
+        facemark->fit(image, faces, landmarks);
+        @endcode
+        */
+        virtual bool fit( InputArray image, InputArray faces, InputOutputArray landmarks )=0;
+
+        /** @brief Set a user defined face detector for the Facemark algorithm.
+
+        <B>Example of usage</B>
+        @code
+        facemark->setFaceDetector(myDetector);
+        @endcode
+
+        Example of a user defined face detector
+        @code
+        bool myDetector( InputArray image, OutputArray ROIs ){
+            std::vector<Rect> & faces = *(std::vector<Rect>*) ROIs.getObj();
+            faces.clear();
+
+            Mat img = image.getMat();
+
+            // -------- do something --------
+        }
+        @endcode
+        */
         virtual bool setFaceDetector(bool(*f)(InputArray , OutputArray ))=0;
-        //!<  set the custom face detector
+
+        /** @brief Detect faces from a given image using default or user defined face detector.
+        Some Algorithm might not provide a default face detector.
+
+        @param image Input image.
+        @param faces Output of the function which represent region of interest of the detected faces.
+        Each face is stored in cv::Rect container.
+
+        <B>Example of usage</B>
+        @code
+        std::vector<cv::Rect> faces;
+        facemark->getFaces(img, faces);
+        for(int j=0;j<faces.size();j++){
+            cv::rectangle(img, faces[j], cv::Scalar(255,0,255));
+        }
+        @endcode
+        */
         virtual bool getFaces( InputArray image , OutputArray faces)=0;
-        //!<  get faces using the custom detector
 
     }; /* Facemark*/
 
