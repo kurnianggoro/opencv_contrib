@@ -1142,7 +1142,7 @@ private:
 	const problem *prob;
 };
 
-l2r_lr_fun::l2r_lr_fun(const problem *_prob, double *_C)
+l2r_lr_fun::l2r_lr_fun(const problem *_prob, double *c)
 {
 	int l=_prob->l;
 
@@ -1150,7 +1150,7 @@ l2r_lr_fun::l2r_lr_fun(const problem *_prob, double *_C)
 
 	z = new double[l];
 	D = new double[l];
-	this->C = _C;
+	this->C = c;
 }
 
 l2r_lr_fun::~l2r_lr_fun()
@@ -1289,7 +1289,7 @@ protected:
 	const problem *prob;
 };
 
-l2r_l2_svc_fun::l2r_l2_svc_fun(const problem *_prob, double *_C)
+l2r_l2_svc_fun::l2r_l2_svc_fun(const problem *_prob, double *c)
 {
 	int l=_prob->l;
 
@@ -1298,7 +1298,7 @@ l2r_l2_svc_fun::l2r_l2_svc_fun(const problem *_prob, double *_C)
 	z = new double[l];
 	D = new double[l];
 	I = new int[l];
-	C = _C;
+	C = c;
 }
 
 l2r_l2_svc_fun::~l2r_l2_svc_fun()
@@ -1440,10 +1440,10 @@ private:
 	double p;
 };
 
-l2r_l2_svr_fun::l2r_l2_svr_fun(const problem *_prob, double *_C, double _p):
-	l2r_l2_svc_fun(_prob, _C)
+l2r_l2_svr_fun::l2r_l2_svr_fun(const problem *_prob, double *C_, double p_):
+	l2r_l2_svc_fun(_prob, C_)
 {
-	this->p = _p;
+	this->p = p_;
 }
 
 double l2r_l2_svr_fun::fun(double *w)

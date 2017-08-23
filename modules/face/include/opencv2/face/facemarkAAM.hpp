@@ -75,12 +75,27 @@ namespace face {
 
         };
 
-        /**
-        * \brief a custom fitting function designed for AAM algorithm
-        * AAM fitting relies on basic shape as initializer,
-        * are used to adjust the initial points for fitting
+        /** @brief A custom fitting function designed for AAM algorithm.
+        AAM fitting relies on basic shape as initializer. Therefore,
+        transformation paramters are needed to adjust the initial points in the fitting.
+
+        @param image Input image.
+        @param landmarks The fitted facial landmarks.
+        @param R Rotation matrix.
+        @param T Translation vector.
+        @param scale scaling factor.
+
+        <B>Example of usage</B>
+        @code
+        Mat R =  Mat::eye(2, 2, CV_32F);
+        Point2f t = Point2f(0,0);
+        float scale = 1.0;
+        std::vector<Point2f> landmarks;
+        facemark->fitSingle(image, landmarks, R,T, scale);
+        @endcode
+
         */
-        virtual bool fitSingle( InputArray image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale )=0;
+        virtual bool fitSingle( InputArray image, OutputArray landmarks, Mat R, Point2f T, float scale )=0;
 
         //!<  initializer
         static Ptr<FacemarkAAM> create(const FacemarkAAM::Params &parameters = FacemarkAAM::Params() );
