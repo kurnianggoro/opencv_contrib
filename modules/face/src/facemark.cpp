@@ -112,7 +112,7 @@ namespace face {
     }
 
     bool loadFacePoints(String filename, OutputArray points, float offset){
-        std::vector<Point2f> pts;
+        std::vector<Point2f> & pts = *(std::vector<Point2f> *)points.getObj();
 
         std::string line, item;
         std::ifstream infile(filename.c_str());
@@ -149,7 +149,6 @@ namespace face {
 
         }
 
-        Mat(pts).copyTo(points);
         return true;
     }
 

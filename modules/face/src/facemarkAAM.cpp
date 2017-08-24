@@ -40,6 +40,7 @@ namespace face {
 
         bool setFaceDetector(bool(*f)(InputArray , OutputArray ));
         bool getFaces( InputArray image ,OutputArray faces);
+        void getParams(Model & params);
 
     protected:
 
@@ -47,8 +48,8 @@ namespace face {
         bool fitSingle( InputArray image, OutputArray landmarks, Mat R, Point2f T, float scale );
         bool fitImpl( const Mat image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale );
 
-        // void trainingImpl(String imageList, String groundTruth, const FacemarkAAM::Params &parameters);
-        void training(String imageList, String groundTruth);
+        void addTrainingSample(InputArray image, InputArray landmarks);
+        void training();
 
         Mat procrustes(std::vector<Point2f> , std::vector<Point2f> , Mat & , Scalar & , float & );
         void calcMeanShape(std::vector<std::vector<Point2f> > ,std::vector<Point2f> & );
@@ -73,6 +74,8 @@ namespace face {
         void gradient(const Mat M, Mat & gx, Mat & gy);
         void createWarpJacobian(Mat S, Mat Q,  std::vector<Vec3i> , Model::Texture & T, Mat & Wx_dp, Mat & Wy_dp, std::vector<std::vector<int> > & Tp);
 
+        std::vector<Mat> images;
+        std::vector<std::vector<Point2f> > facePoints;
         FacemarkAAM::Params params;
         FacemarkAAM::Model AAM;
         bool(*faceDetector)(InputArray , OutputArray);
@@ -103,6 +106,10 @@ namespace face {
     // void FacemarkAAMImpl::write( cv::FileStorage& fs ) const {
     //     params.write( fs );
     // }
+
+    void FacemarkAAMImpl::getParams(Model & config){
+        config = AAM;
+    }
 
     bool FacemarkAAMImpl::setFaceDetector(bool(*f)(InputArray , OutputArray )){
         faceDetector = f;
@@ -136,16 +143,27 @@ namespace face {
     //     trainingImpl(imageList, groundTruth);
     // }
 
-    void FacemarkAAMImpl::training(String imageList, String groundTruth){
+    void FacemarkAAMImpl::addTrainingSample(InputArray image, InputArray landmarks){
+        std::vector<Point2f> & _landmarks = *(std::vector<Point2f>*)landmarks.getObj();
 
-        std::vector<String> images;
-        std::vector<std::vector<Point2f> > facePoints, normalized;
+        images.push_back(image.getMat());
+        facePoints.push_back(_landmarks);
+    }
+
+    void FacemarkAAMImpl::training(){
+        if (images.size()<1) {
+           std::string error_message =
+            "Training data is not provided. Consider to add using addTrainingSample() function!";
+           CV_Error(CV_StsBadArg, error_message);
+        }
+
+        std::vector<std::vector<Point2f> > normalized;
         Mat erode_kernel = getStructuringElement(MORPH_RECT, Size(3,3), Point(1,1));
         Mat image;
 
         int param_max_m = 550;
         int param_max_n = 136;
-        float offset = -0.0;
+        // float offset = -0.0;
 
         /* initialize the values TODO: set them based on the params*/
         AAM.scales.push_back(1);
@@ -153,11 +171,6 @@ namespace face {
         AAM.textures.resize(AAM.scales.size());
 
         /*-------------- A. Load the training data---------*/
-        if(groundTruth==""){
-            loadTrainingData(imageList, images, facePoints);
-        }else{
-            loadTrainingData(imageList, groundTruth, images, facePoints, offset);
-        }
         procrustesAnalysis(facePoints, normalized,AAM.s0);
 
         /*-------------- B. Create the shape model---------*/
@@ -210,8 +223,8 @@ namespace face {
             /* ------------ Part D. Get textures -------------*/
             Mat texture_feats, feat;
             for(size_t i=0; i<images.size();i++){
-                image = imread(images[i]);
-                warped = warpImage(image,base_shape, facePoints[i], AAM.triangles, AAM.textures[scale].resolution,AAM.textures[scale].textureIdx);
+                printf("extract features from image #%i/%i\n", (int)i, (int)images.size());
+                warped = warpImage(images[i],base_shape, facePoints[i], AAM.triangles, AAM.textures[scale].resolution,AAM.textures[scale].textureIdx);
                 feat = getFeature<uchar>(warped, AAM.textures[scale].ind1);
                 texture_feats.push_back(feat.t());
             }
@@ -236,6 +249,7 @@ namespace face {
             AAM.textures[scale].AA = orthonormal(U);
         } // scale
 
+        images.clear();
         saveModel("AAM.yml");
         isModelTrained = true;
         printf("training is finished\n");

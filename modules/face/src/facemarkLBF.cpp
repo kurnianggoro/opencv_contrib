@@ -86,11 +86,12 @@ namespace face {
         bool fit( InputArray image, InputArray faces, InputOutputArray landmarks );//!< from many ROIs
         bool fitImpl( const Mat image, std::vector<Point2f> & landmarks );//!< from a face
 
-        // void trainingImpl(String imageList, String groundTruth, const FacemarkLBF::Params &parameters);
-        void training(String imageList, String groundTruth);
+        void addTrainingSample(InputArray image, InputArray landmarks);
+        void training();
 
         Rect getBBox(Mat &img, const Mat_<double> shape);
-        void prepareTrainingData(std::vector<String> images, std::vector<std::vector<Point2f> > & facePoints, std::vector<Mat> & cropped, std::vector<Mat> & shapes, std::vector<BBox> &boxes);
+        void prepareTrainingData(Mat img, std::vector<Point2f> facePoints,
+            std::vector<Mat> & cropped, std::vector<Mat> & shapes, std::vector<BBox> &boxes);
         void data_augmentation(std::vector<Mat> &imgs, std::vector<Mat> &gt_shapes, std::vector<BBox> &bboxes);
         Mat getMeanShape(std::vector<Mat> &gt_shapes, std::vector<BBox> &bboxes);
 
@@ -100,6 +101,12 @@ namespace face {
         CascadeClassifier face_cascade;
         bool(*faceDetector)(InputArray , OutputArray);
         bool isSetDetector;
+
+        /*training data*/
+        std::vector<std::vector<Point2f> > data_facemarks; //original position
+        std::vector<Mat> data_faces; //face ROI
+        std::vector<BBox> data_boxes;
+        std::vector<Mat> data_shapes; //position in the face ROI
 
     private:
         bool isModelTrained;
@@ -257,26 +264,25 @@ namespace face {
         return true;
     }
 
-    void FacemarkLBFImpl::training(String imageList, String groundTruth){
+    void FacemarkLBFImpl::addTrainingSample(InputArray image, InputArray landmarks){
+        std::vector<Point2f> & _landmarks = *(std::vector<Point2f>*)landmarks.getObj();
         configFaceDetector();
+        prepareTrainingData(image.getMat(), _landmarks, data_faces, data_shapes, data_boxes);
+    }
 
-        std::vector<String> images;
-        std::vector<std::vector<Point2f> > facePoints;
-
-        loadTrainingData(imageList, groundTruth, images, facePoints, (float)params.shape_offset);
-
-        std::vector<Mat> cropped;
-        std::vector<BBox> boxes;
-        std::vector<Mat> shapes;
-
-        prepareTrainingData(images, facePoints, cropped, shapes, boxes);
+    void FacemarkLBFImpl::training(){
+        if (data_faces.size()<1) {
+           std::string error_message =
+            "Training data is not provided. Consider to add using addTrainingSample() function!";
+           CV_Error(CV_StsBadArg, error_message);
+        }
 
         // flip the image and swap the landmark position
-        data_augmentation(cropped, shapes, boxes);
+        data_augmentation(data_faces, data_shapes, data_boxes);
 
-        Mat mean_shape = getMeanShape(shapes, boxes);
+        Mat mean_shape = getMeanShape(data_shapes, data_boxes);
 
-        int N = (int)cropped.size();
+        int N = (int)data_faces.size();
         int L = N*params.initShape_n;
         std::vector<Mat> imgs(L), gt_shapes(L), current_shapes(L);
         std::vector<BBox> bboxes(L);
@@ -288,10 +294,10 @@ namespace face {
                 do {
                     k = rng.uniform(0, N);
                 } while (k == i);
-                imgs[idx] = cropped[i];
-                gt_shapes[idx] = shapes[i];
-                bboxes[idx] = boxes[i];
-                current_shapes[idx] = boxes[i].reproject(boxes[k].project(shapes[k]));
+                imgs[idx] = data_faces[i];
+                gt_shapes[idx] = data_shapes[i];
+                bboxes[idx] = data_boxes[i];
+                current_shapes[idx] = data_boxes[i].reproject(data_boxes[k].project(data_shapes[k]));
             }
         }
 
@@ -456,48 +462,36 @@ namespace face {
         return Rect(-1, -1, -1, -1);
     }
 
-    void FacemarkLBFImpl::prepareTrainingData(std::vector<String> images, std::vector<std::vector<Point2f> > & facePoints,
+    void FacemarkLBFImpl::prepareTrainingData(Mat img, std::vector<Point2f> facePoints,
         std::vector<Mat> & cropped, std::vector<Mat> & shapes, std::vector<BBox> &boxes)
     {
-        std::vector<std::vector<Point2f> > facePts;
-        boxes.clear();
-        cropped.clear();
-        shapes.clear();
+        Mat shape;
+        Mat _shape = Mat(facePoints).reshape(1);
+        Rect box = getBBox(img, _shape);
+        if(box.x != -1){
+            _shape.convertTo(shape, CV_64FC1);
+            Mat sx = shape.col(0);
+            Mat sy = shape.col(1);
+            double min_x, max_x, min_y, max_y;
+            minMaxIdx(sx, &min_x, &max_x);
+            minMaxIdx(sy, &min_y, &max_y);
 
-        int N = (int)images.size();
-        for(int i=0; i<N;i++){
-            printf("image #%i/%i\n", i, N);
-            Mat img = imread(images[i].c_str(), 0);
-            Rect box = getBBox(img, Mat(facePoints[i]).reshape(1));
-            if(box.x != -1){
-                Mat _shape = Mat(facePoints[i]).reshape(1);
-                Mat shape;
-                _shape.convertTo(shape, CV_64FC1);
-                Mat sx = shape.col(0);
-                Mat sy = shape.col(1);
-                double min_x, max_x, min_y, max_y;
-                minMaxIdx(sx, &min_x, &max_x);
-                minMaxIdx(sy, &min_y, &max_y);
+            min_x = std::max(0., min_x - box.width / 2);
+            max_x = std::min(img.cols - 1., max_x + box.width / 2);
+            min_y = std::max(0., min_y - box.height / 2);
+            max_y = std::min(img.rows - 1., max_y + box.height / 2);
 
-                min_x = std::max(0., min_x - box.width / 2);
-                max_x = std::min(img.cols - 1., max_x + box.width / 2);
-                min_y = std::max(0., min_y - box.height / 2);
-                max_y = std::min(img.rows - 1., max_y + box.height / 2);
+            double w = max_x - min_x;
+            double h = max_y - min_y;
 
-                double w = max_x - min_x;
-                double h = max_y - min_y;
+            shape = Mat(shape.reshape(2)-Scalar(min_x, min_y)).reshape(1);
 
-                shape = Mat(shape.reshape(2)-Scalar(min_x, min_y)).reshape(1);
+            boxes.push_back(BBox(box.x - min_x, box.y - min_y, box.width, box.height));
+            Mat crop = img(Rect((int)min_x, (int)min_y, (int)w, (int)h)).clone();
+            cropped.push_back(crop);
+            shapes.push_back(shape);
+        }
 
-                facePts.push_back(facePoints[i]);
-                boxes.push_back(BBox(box.x - min_x, box.y - min_y, box.width, box.height));
-                Mat crop = img(Rect((int)min_x, (int)min_y, (int)w, (int)h)).clone();
-                cropped.push_back(crop);
-                shapes.push_back(shape);
-            }
-        }//images.size()
-
-        facePoints = facePts;
     }
 
     void FacemarkLBFImpl::data_augmentation(std::vector<Mat> &imgs, std::vector<Mat> &gt_shapes, std::vector<BBox> &bboxes) {

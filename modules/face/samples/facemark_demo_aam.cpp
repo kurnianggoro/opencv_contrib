@@ -28,6 +28,8 @@
  *--------------------------------------------------*/
 
 #include <stdio.h>
+#include <fstream>
+#include <sstream>
 #include "opencv2/core.hpp"
 #include "opencv2/highgui.hpp"
 #include "opencv2/imgproc.hpp"
@@ -42,32 +44,41 @@ using namespace cv;
 using namespace cv::face;
 
 Mat loadCSV(std::string filename);
+bool loadDatasetList(String imageList, String groundTruth, std::vector<String> & images, std::vector<String> & landmarks);
 
 int main(int argc, char** argv )
 {
     Ptr<FacemarkAAM> facemark = FacemarkAAM::create();
 
     /*--------------- TRAINING -----------------*/
-    String imageFiles = "../data/images_train.txt";
-    String ptsFiles = "../data/points_train.txt";
+    String imageFiles = "../data/lfpw_images_train.txt";
+    String ptsFiles = "../data/lfpw_points_train.txt";
+    std::vector<String> images_train;
+    std::vector<String> landmarks_train;
+    loadDatasetList(imageFiles,ptsFiles,images_train,landmarks_train);
+
+    Mat image;
+    std::vector<Point2f> facial_points;
+    for(size_t i=0;i<images_train.size();i++){
+        image = imread(images_train[i].c_str());
+        loadFacePoints(landmarks_train[i],facial_points);
+        facemark->addTrainingSample(image, facial_points);
+    }
 
     /* trained model will be saved to AAM.yml */
-    facemark->training(imageFiles, ptsFiles);
+    facemark->training();
 
     /*--------------- FITTING -----------------*/
     imageFiles = "../data/images_test.txt";
     ptsFiles = "../data/points_test.txt";
     std::vector<String> images;
-    std::vector<std::vector<Point2f> > facePoints;
-    /*load the list of test
-    *files, offest -1.0 is used since in opencv index is started from 0
-    */
-    loadTrainingData(imageFiles, ptsFiles, images, facePoints, -1.0);
+    std::vector<String> facePoints;
+    loadDatasetList(imageFiles, ptsFiles, images, facePoints);
 
     /*load the selected image*/
     int tId = 0;
     if(argc>1)tId = atoi(argv[1]);
-    Mat image = imread(images[tId]);
+    image = imread(images[tId]);
 
     /*load the face detection result from another code
     *alternatively, custom face detector can be utilized
@@ -114,4 +125,34 @@ Mat loadCSV(std::string filename){
     }
     inputfile.close();
     return vect.clone();
+}
+
+bool loadDatasetList(String imageList, String groundTruth, std::vector<String> & images, std::vector<String> & landmarks){
+    std::string line;
+
+    /*clear the output containers*/
+    images.clear();
+    landmarks.clear();
+
+    /*open the files*/
+    std::ifstream infile;
+    std::ifstream ss_gt;
+    infile.open(imageList.c_str(), std::ios::in);
+    ss_gt.open(groundTruth.c_str(), std::ios::in);
+    if ((!infile) || !(ss_gt)) {
+       printf("No valid input file was given, please check the given filename.\n");
+       return false;
+    }
+
+     /*load the images path*/
+    while (getline (infile, line)){
+        images.push_back(line);
+    }
+
+    /*load the points*/
+    while (getline (ss_gt, line)){
+        landmarks.push_back(line);
+    }
+
+    return true;
 }

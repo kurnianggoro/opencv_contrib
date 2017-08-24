@@ -199,6 +199,8 @@ namespace face {
         // virtual void read( const FileNode& fn )=0;
         // virtual void write( FileStorage& fs ) const=0;
 
+        virtual void addTrainingSample(InputArray image, InputArray landmarks)=0;
+
         /** @brief Trains a Facemark algorithm using the given dataset.
 
         @param imageList This file contains the list of image names in the dataset.
@@ -231,7 +233,7 @@ namespace face {
         /home/user/ibug/image_006.pts
         @endcode
         */
-        virtual void training(String imageList, String groundTruth)=0;
+        virtual void training()=0;
 
         /** @brief A function to load the trained model before the fitting process.
 

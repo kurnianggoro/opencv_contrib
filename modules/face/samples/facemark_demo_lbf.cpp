@@ -26,6 +26,8 @@
  *--------------------------------------------------*/
 
  #include <stdio.h>
+ #include <fstream>
+ #include <sstream>
  #include "opencv2/core.hpp"
  #include "opencv2/highgui.hpp"
  #include "opencv2/imgproc.hpp"
@@ -35,6 +37,8 @@
  using namespace cv;
  using namespace cv::face;
 
+ bool loadDatasetList(String imageList, String groundTruth, std::vector<String> & images, std::vector<String> & landmarks);
+
  int main()
  {
      /*create the facemark instance*/
@@ -43,16 +47,29 @@
      params.cascade_face = "../data/haarcascade_frontalface_alt.xml";
      Ptr<Facemark> facemark = FacemarkLBF::create(params);
 
-     /*train the Algorithm*/
+     /*Loads the dataset*/
      String imageFiles = "../data/images_train.txt";
      String ptsFiles = "../data/points_train.txt";
-     facemark->training(imageFiles, ptsFiles);
+     std::vector<String> images_train;
+     std::vector<String> landmarks_train;
+     loadDatasetList(imageFiles,ptsFiles,images_train,landmarks_train);
+
+     Mat image;
+     std::vector<Point2f> facial_points;
+     for(size_t i=0;i<images_train.size();i++){
+         image = imread(images_train[i].c_str());
+         loadFacePoints(landmarks_train[i],facial_points);
+         facemark->addTrainingSample(image, facial_points);
+     }
+
+     /*train the Algorithm*/
+     facemark->training();
 
      String testFiles = "../data/images_test.txt";
      String testPts = "../data/points_test.txt";
      std::vector<String> images;
-     std::vector<std::vector<Point2f> > facePoints;
-     loadTrainingData(testFiles, testPts, images, facePoints, 0.0);
+     std::vector<String> facePoints;
+     loadDatasetList(testFiles, testPts, images, facePoints);
 
      std::vector<Rect> rects;
      CascadeClassifier cc(params.cascade_face.c_str());
@@ -67,4 +84,34 @@
          waitKey(0);
      }
 
+ }
+
+ bool loadDatasetList(String imageList, String groundTruth, std::vector<String> & images, std::vector<String> & landmarks){
+     std::string line;
+
+     /*clear the output containers*/
+     images.clear();
+     landmarks.clear();
+
+     /*open the files*/
+     std::ifstream infile;
+     infile.open(imageList.c_str(), std::ios::in);
+     std::ifstream ss_gt;
+     ss_gt.open(groundTruth.c_str(), std::ios::in);
+     if ((!infile) || !(ss_gt)) {
+        printf("No valid input file was given, please check the given filename.\n");
+        return false;
+     }
+
+      /*load the images path*/
+     while (getline (infile, line)){
+         images.push_back(line);
+     }
+
+     /*load the points*/
+     while (getline (ss_gt, line)){
+         landmarks.push_back(line);
+     }
+
+     return true;
  }

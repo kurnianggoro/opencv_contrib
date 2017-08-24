@@ -96,7 +96,7 @@ namespace face {
 
         */
         virtual bool fitSingle( InputArray image, OutputArray landmarks, Mat R, Point2f T, float scale )=0;
-
+        virtual void getParams(Model & params) = 0;
         //!<  initializer
         static Ptr<FacemarkAAM> create(const FacemarkAAM::Params &parameters = FacemarkAAM::Params() );
         virtual ~FacemarkAAM() {}
