@@ -33,6 +33,7 @@ namespace face {
         tree_depth=5;
         bagging_overlap = 0.4;
         model_filename = "ibug.model";
+        verbose = true;
 
         int _pupils[][6] = { { 36, 37, 38, 39, 40, 41 }, { 42, 43, 44, 45, 46, 47 } };
         for (int i = 0; i < 6; i++) {
@@ -86,7 +87,7 @@ namespace face {
         bool fit( InputArray image, InputArray faces, InputOutputArray landmarks );//!< from many ROIs
         bool fitImpl( const Mat image, std::vector<Point2f> & landmarks );//!< from a face
 
-        void addTrainingSample(InputArray image, InputArray landmarks);
+        bool addTrainingSample(InputArray image, InputArray landmarks);
         void training();
 
         Rect getBBox(Mat &img, const Mat_<double> shape);
@@ -152,13 +153,14 @@ namespace face {
             RandomForest(){};
             ~RandomForest(){};
 
-            void initForest(int landmark_n, int trees_n, int tree_depth, double ,  std::vector<int>, std::vector<double>);
+            void initForest(int landmark_n, int trees_n, int tree_depth, double ,  std::vector<int>, std::vector<double>, bool);
             void train(std::vector<cv::Mat> &imgs, std::vector<cv::Mat> &current_shapes, \
                        std::vector<BBox> &bboxes, std::vector<cv::Mat> &delta_shapes, cv::Mat &mean_shape, int stage);
             Mat generateLBF(Mat &img, Mat &current_shape, BBox &bbox, Mat &mean_shape);
             void write(FILE *fd);
             void read(FILE *fd);
 
+            bool verbose;
             int landmark_n;
             int trees_n, tree_depth;
             double overlap_ratio;
@@ -211,7 +213,6 @@ namespace face {
     bool FacemarkLBFImpl::setFaceDetector(bool(*f)(InputArray , OutputArray )){
         faceDetector = f;
         isSetDetector = true;
-        printf("face detector is configured\n");
         return true;
     }
 
@@ -264,10 +265,11 @@ namespace face {
         return true;
     }
 
-    void FacemarkLBFImpl::addTrainingSample(InputArray image, InputArray landmarks){
+    bool FacemarkLBFImpl::addTrainingSample(InputArray image, InputArray landmarks){
         std::vector<Point2f> & _landmarks = *(std::vector<Point2f>*)landmarks.getObj();
         configFaceDetector();
         prepareTrainingData(image.getMat(), _landmarks, data_faces, data_shapes, data_boxes);
+        return true;
     }
 
     void FacemarkLBFImpl::training(){
@@ -408,7 +410,7 @@ namespace face {
     // }
 
     void FacemarkLBFImpl::loadModel(String s){
-        printf("loading data from : %s\n", s.c_str());
+        if(params.verbose) printf("loading data from : %s\n", s.c_str());
         std::ifstream infile;
         infile.open(s.c_str(), std::ios::in);
         if (!infile) {
@@ -872,7 +874,15 @@ namespace face {
     }
 
     /*---------------RandomForest Implementation---------------------*/
-    void FacemarkLBFImpl::RandomForest::initForest(int _landmark_n, int _trees_n, int _tree_depth, double _overlap_ratio, std::vector<int>_feats_m, std::vector<double>_radius_m) {
+    void FacemarkLBFImpl::RandomForest::initForest(
+        int _landmark_n,
+        int _trees_n,
+        int _tree_depth,
+        double _overlap_ratio,
+        std::vector<int>_feats_m,
+        std::vector<double>_radius_m,
+        bool verbose_mode
+    ) {
         trees_n = _trees_n;
         landmark_n = _landmark_n;
         tree_depth = _tree_depth;
@@ -880,6 +890,8 @@ namespace face {
 
         feats_m = _feats_m;
         radius_m = _radius_m;
+
+        verbose = verbose_mode;
 
         random_trees.resize(landmark_n);
         for (int i = 0; i < landmark_n; i++) {
@@ -907,7 +919,7 @@ namespace face {
                 for (int k = 0; k < L; k++) root[k] = start + k;
                 random_trees[i][j].train(imgs, current_shapes, bboxes, delta_shapes, mean_shape, root, stage);
             }
-            printf("Train %2dth of %d landmark Done, it costs %.4lf s\n", i+1, landmark_n, TIMER_NOW);
+            if(verbose) printf("Train %2dth of %d landmark Done, it costs %.4lf s\n", i+1, landmark_n, TIMER_NOW);
         TIMER_END
         }
     }
@@ -985,7 +997,15 @@ namespace face {
 
         random_forests.resize(stages_n);
         for (int i = 0; i < stages_n; i++)
-            random_forests[i].initForest(config.n_landmarks, config.tree_n, config.tree_depth, config.bagging_overlap, config.feats_m, config.radius_m);
+            random_forests[i].initForest(
+                config.n_landmarks,
+                config.tree_n,
+                config.tree_depth,
+                config.bagging_overlap,
+                config.feats_m,
+                config.radius_m,
+                config.verbose
+            );
 
         mean_shape.create(config.n_landmarks, 2, CV_64FC1);
 
@@ -1007,10 +1027,10 @@ namespace face {
             std::vector<Mat> delta_shapes = getDeltaShapes(gt_shapes, current_shapes, bboxes, mean_shape);
 
             // train random forest
-            printf("training random forest %dth of %d stages, ",k+1, stages_n);
+            if(config.verbose) printf("training random forest %dth of %d stages, ",k+1, stages_n);
             TIMER_BEGIN
                 random_forests[k].train(imgs, current_shapes, bboxes, delta_shapes, mean_shape, k);
-                printf("costs %.4lf s\n",  TIMER_NOW);
+                if(config.verbose) printf("costs %.4lf s\n",  TIMER_NOW);
             TIMER_END
 
             // generate lbf of every train data
@@ -1021,10 +1041,10 @@ namespace face {
             }
 
             // global regression
-            printf("start train global regression of %dth stage\n", k);
+            if(config.verbose) printf("start train global regression of %dth stage\n", k);
             TIMER_BEGIN
                 globalRegressionTrain(lbfs, delta_shapes, k, config);
-                printf("end of train global regression of %dth stage, costs %.4lf s\n", k, TIMER_NOW);
+                if(config.verbose) printf("end of train global regression of %dth stage, costs %.4lf s\n", k, TIMER_NOW);
             TIMER_END
 
             // update current_shapes
@@ -1038,7 +1058,7 @@ namespace face {
 
             // calc mean error
             double e = calcMeanError(gt_shapes, current_shapes, config.n_landmarks, config.pupils[0],config.pupils[1]);
-            printf("Train %dth stage Done with Error = %lf\n", k, e);
+            if(config.verbose) printf("Train %dth stage Done with Error = %lf\n", k, e);
 
         } // for int k
     }//Regressor::training
@@ -1093,7 +1113,7 @@ namespace face {
         free(model->label);     \
         free(model)
 
-            printf("train %2dth landmark\n", i);
+            if(config.verbose) printf("train %2dth landmark\n", i);
             struct liblinear::problem prob_ = prob;
             prob_.y = Y[2 * i];
             liblinear::check_parameter(&param);
@@ -1173,7 +1193,7 @@ namespace face {
         }
         // every stages
         for (int k = 0; k < config.stages_n; k++) {
-            printf("Write %dth stage\n", k);
+            if(config.verbose) printf("Write %dth stage\n", k);
             random_forests[k].write(fd);
             for (int i = 0; i < 2 * config.n_landmarks; i++) {
                 ptr = gl_regression_weights[k].ptr<double>(i);
@@ -1203,7 +1223,15 @@ namespace face {
 
         // every stages
         for (int k = 0; k < stages_n; k++) {
-            random_forests[k].initForest(config.n_landmarks, config.tree_n, config.tree_depth, config.bagging_overlap, config.feats_m, config.radius_m);
+            random_forests[k].initForest(
+                config.n_landmarks,
+                config.tree_n,
+                config.tree_depth,
+                config.bagging_overlap,
+                config.feats_m,
+                config.radius_m,
+                config.verbose
+            );
             random_forests[k].read(fd);
             for (int i = 0; i < 2 * config.n_landmarks; i++) {
                 ptr = gl_regression_weights[k].ptr<double>(i);

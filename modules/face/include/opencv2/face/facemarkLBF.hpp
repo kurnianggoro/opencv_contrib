@@ -23,6 +23,8 @@ namespace face {
             //!<  offset for the loaded face landmark points
             String cascade_face;
             //!<  filename of the face detector model
+            bool verbose;
+            //!< show the training print-out
 
             int n_landmarks;
             //!<  number of landmark points

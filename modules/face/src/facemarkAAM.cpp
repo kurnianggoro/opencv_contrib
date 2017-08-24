@@ -48,7 +48,7 @@ namespace face {
         bool fitSingle( InputArray image, OutputArray landmarks, Mat R, Point2f T, float scale );
         bool fitImpl( const Mat image, std::vector<Point2f>& landmarks, Mat R, Point2f T, float scale );
 
-        void addTrainingSample(InputArray image, InputArray landmarks);
+        bool addTrainingSample(InputArray image, InputArray landmarks);
         void training();
 
         Mat procrustes(std::vector<Point2f> , std::vector<Point2f> , Mat & , Scalar & , float & );
@@ -143,11 +143,13 @@ namespace face {
     //     trainingImpl(imageList, groundTruth);
     // }
 
-    void FacemarkAAMImpl::addTrainingSample(InputArray image, InputArray landmarks){
+    bool FacemarkAAMImpl::addTrainingSample(InputArray image, InputArray landmarks){
         std::vector<Point2f> & _landmarks = *(std::vector<Point2f>*)landmarks.getObj();
 
         images.push_back(image.getMat());
         facePoints.push_back(_landmarks);
+
+        return true;
     }
 
     void FacemarkAAMImpl::training(){

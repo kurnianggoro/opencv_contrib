@@ -242,7 +242,7 @@ namespace face {
         @endcode
 
         */
-        virtual void addTrainingSample(InputArray image, InputArray landmarks)=0;
+        virtual bool addTrainingSample(InputArray image, InputArray landmarks)=0;
 
         /** @brief Trains a Facemark algorithm using the given dataset.
         Before the training process, training samples should be added to the trainer
@@ -259,7 +259,7 @@ namespace face {
         facemark->training();
         @endcode
         */
-        
+
         virtual void training()=0;
 
         /** @brief A function to load the trained model before the fitting process.
