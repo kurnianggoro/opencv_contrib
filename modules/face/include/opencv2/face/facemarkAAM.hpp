@@ -5,7 +5,7 @@
 namespace cv {
 namespace face {
 
-//! @addtogroup facemark
+//! @addtogroup face
 //! @{
 
     class CV_EXPORTS_W FacemarkAAM : public Facemark
@@ -27,6 +27,12 @@ namespace face {
             // * \brief Read parameters from file, currently unused
             // */
             // // void write(FileStorage& /*fs*/) const;
+
+            std::string model_filename;
+            int m;
+            int n;
+            int n_iter;
+            bool verbose;
         };
 
         /**

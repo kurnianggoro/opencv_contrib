@@ -45,8 +45,8 @@ using namespace std;
 using namespace cv;
 using namespace cv::face;
 
-CascadeClassifier cascade_detector;
-bool myCustomDetector( InputArray image, OutputArray ROIs ){
+CascadeClassifier face_detector;
+bool customDetector( InputArray image, OutputArray ROIs ){
     Mat gray;
     std::vector<Rect> & faces = *(std::vector<Rect>*) ROIs.getObj();
     faces.clear();
@@ -58,33 +58,29 @@ bool myCustomDetector( InputArray image, OutputArray ROIs ){
     }
     equalizeHist( gray, gray );
 
-    cascade_detector.detectMultiScale( gray, faces, 1.4, 2, CV_HAAR_SCALE_IMAGE, Size(30, 30) );
+    face_detector.detectMultiScale( gray, faces, 1.4, 2, CV_HAAR_SCALE_IMAGE, Size(30, 30) );
     return true;
 }
 
-TEST(CV_Face_FacemarkLBF, can_create_default) {
-    FacemarkLBF::Params params;
-    params.n_landmarks = 68;
+TEST(CV_Face_FacemarkAAM, can_create_default) {
+    FacemarkAAM::Params params;
 
     Ptr<Facemark> facemark;
-    EXPECT_NO_THROW(facemark = FacemarkLBF::create(params));
+    EXPECT_NO_THROW(facemark = FacemarkAAM::create(params));
     EXPECT_FALSE(facemark.empty());
 }
 
-TEST(CV_Face_FacemarkLBF, can_set_custom_detector) {
+TEST(CV_Face_FacemarkAAM, can_set_custom_detector) {
     string cascade_filename =
         cvtest::findDataFile("face/lbpcascade_frontalface.xml", true);
 
-    FacemarkLBF::Params params;
-    params.cascade_face = cascade_filename;
+    EXPECT_TRUE(face_detector.load(cascade_filename));
 
-    EXPECT_TRUE(cascade_detector.load(cascade_filename));
-
-    Ptr<Facemark> facemark = FacemarkLBF::create(params);
-    EXPECT_TRUE(facemark->setFaceDetector(myCustomDetector));
+    Ptr<Facemark> facemark = FacemarkAAM::create();
+    EXPECT_TRUE(facemark->setFaceDetector(customDetector));
 }
 
-TEST(CV_Face_FacemarkLBF, can_perform_training) {
+TEST(CV_Face_FacemarkAAM, can_perform_training) {
 
     string i1 = cvtest::findDataFile("face/therock.jpg", true);
     string p1 = cvtest::findDataFile("face/therock.pts", true);
@@ -101,10 +97,11 @@ TEST(CV_Face_FacemarkLBF, can_perform_training) {
 
     string cascade_filename =
         cvtest::findDataFile("face/lbpcascade_frontalface.xml", true);
-    FacemarkLBF::Params params;
-    params.cascade_face = cascade_filename;
+    FacemarkAAM::Params params;
+    params.n = 1;
+    params.m = 1;
     params.verbose = false;
-    Ptr<Facemark> facemark = FacemarkLBF::create(params);
+    Ptr<Facemark> facemark = FacemarkAAM::create(params);
 
     Mat image;
     std::vector<Point2f> landmarks;
@@ -118,26 +115,30 @@ TEST(CV_Face_FacemarkLBF, can_perform_training) {
     EXPECT_NO_THROW(facemark->training());
 }
 
-TEST(CV_Face_FacemarkLBF, can_load_model) {
-    string model_filename = "LBF.model";
+TEST(CV_Face_FacemarkAAM, can_load_model) {
+    string model_filename = "AAM.yml";
+    FacemarkAAM::Params params;
+    params.verbose = false;
 
-    Ptr<Facemark> facemark = FacemarkLBF::create();
+    Ptr<Facemark> facemark = FacemarkAAM::create(params);
     EXPECT_NO_THROW(facemark->loadModel(model_filename.c_str()));
 }
 
-TEST(CV_Face_FacemarkLBF, can_detect_landmarks) {
-    string model_filename = "LBF.model";
+TEST(CV_Face_FacemarkAAM, can_detect_landmarks) {
+    string model_filename = "AAM.yml";
     string cascade_filename =
         cvtest::findDataFile("face/lbpcascade_frontalface.xml", true);
 
-    FacemarkLBF::Params params;
+    FacemarkAAM::Params params;
     params.model_filename = model_filename;
-    params.cascade_face = cascade_filename;
+    params.n = 1;
+    params.m = 1;
+    params.n_iter = 1;
+    params.verbose = 0;
+    face_detector.load(cascade_filename);
 
-    cascade_detector.load(cascade_filename);
-
-    Ptr<Facemark> facemark = FacemarkLBF::create(params);
-    facemark->setFaceDetector(myCustomDetector);
+    Ptr<Facemark> facemark = FacemarkAAM::create(params);
+    facemark->setFaceDetector(customDetector);
     facemark->loadModel(params.model_filename.c_str());
 
     string image_filename = cvtest::findDataFile("face/therock.jpg", true);

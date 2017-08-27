@@ -6,7 +6,7 @@
 namespace cv {
 namespace face {
 
-//! @addtogroup facemark
+//! @addtogroup face
 //! @{
 
     class CV_EXPORTS_W FacemarkLBF : public Facemark

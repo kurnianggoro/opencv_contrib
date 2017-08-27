@@ -32,6 +32,36 @@ namespace face {
         return true;
     }
 
+    bool loadDatasetList(String imageList, String groundTruth, std::vector<String> & images, std::vector<String> & landmarks){
+        std::string line;
+
+        /*clear the output containers*/
+        images.clear();
+        landmarks.clear();
+
+        /*open the files*/
+        std::ifstream infile;
+        infile.open(imageList.c_str(), std::ios::in);
+        std::ifstream ss_gt;
+        ss_gt.open(groundTruth.c_str(), std::ios::in);
+        if ((!infile) || !(ss_gt)) {
+           printf("No valid input file was given, please check the given filename.\n");
+           return false;
+        }
+
+         /*load the images path*/
+        while (getline (infile, line)){
+            images.push_back(line);
+        }
+
+        /*load the points*/
+        while (getline (ss_gt, line)){
+            landmarks.push_back(line);
+        }
+
+        return true;
+    }
+
     bool loadTrainingData(String filename, std::vector<String> & images, OutputArray _facePoints, char delim, float offset){
         std::string line;
         std::string item;

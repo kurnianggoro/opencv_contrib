@@ -32,7 +32,7 @@ namespace face {
         tree_n=6;
         tree_depth=5;
         bagging_overlap = 0.4;
-        model_filename = "ibug.model";
+        model_filename = "LBF.model";
         verbose = true;
 
         int _pupils[][6] = { { 36, 37, 38, 39, 40, 41 }, { 42, 43, 44, 45, 46, 47 } };
@@ -223,11 +223,11 @@ namespace face {
             return false;
         }
 
-        std::vector<Rect> faces;
+        std::vector<Rect> & faces = *(std::vector<Rect>*)roi.getObj();
         faces.clear();
 
         faceDetector(image.getMat(), faces);
-        Mat(faces).copyTo(roi);
+
         return true;
     }
 

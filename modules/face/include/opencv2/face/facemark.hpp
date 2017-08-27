@@ -3,7 +3,7 @@
 #define __OPENCV_FACELANDMARK_HPP__
 
 /**
-@defgroup facemark Face Landmark Detection
+@defgroup face Face Recognition
 - @ref tutorial_table_of_content_facemark
 */
 
@@ -15,7 +15,7 @@
 namespace cv {
 namespace face {
 
-//! @addtogroup facemark
+//! @addtogroup face
 //! @{
 
     /** @brief Default face detector
@@ -40,6 +40,28 @@ namespace face {
     CV_EXPORTS_W bool getFacesHaar( InputArray image,
                                     OutputArray faces,
                                     String face_cascade_model );
+
+
+    /** @brief A utility to load list of paths to training image and annotation file.
+    @param imageList The specified file contains paths to the training images.
+    @param annotationList The specified file contains paths to the training annotations.
+    @param images The loaded paths of training images.
+    @param annotations The loaded paths of annotation files.
+
+    Example of usage:
+    @code
+    String imageFiles = "images_path.txt";
+    String ptsFiles = "annotations_path.txt";
+    std::vector<String> images_train;
+    std::vector<String> landmarks_train;
+    loadDatasetList(imageFiles,ptsFiles,images_train,landmarks_train);
+    @endcode
+
+    */
+    CV_EXPORTS_W bool loadDatasetList(String imageList,
+                                      String annotationList,
+                                      std::vector<String> & images,
+                                      std::vector<String> & annotations);
 
     /** @brief A utility to load facial landmark dataset from a single file.
 
@@ -70,7 +92,6 @@ namespace face {
     CV_EXPORTS_W bool loadTrainingData( String filename , std::vector<String> & images,
                                         OutputArray facePoints,
                                         char delim = ' ', float offset = 0.0);
-
 
     /** @brief A utility to load facial landmark information from the dataset.
 
